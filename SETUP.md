@@ -1,10 +1,23 @@
 # Setup — one time, ~15 minutes
 
-After this, the system runs itself every week forever. There are exactly two
-credentials to wire up (a Buffer token and an image-host URL), plus a 2-minute
-test. You do these because they involve your accounts — I never handle the token.
+After this, the system runs itself every week forever. There's a one-click
+workflow install, two credentials to wire up (a Buffer token and an image-host
+URL), plus a 2-minute test. You do these because they involve your accounts —
+I never handle the token.
 
 ---
+
+## 0. Install the schedule (30 seconds)
+
+The automation file ships at **`setup/autopilot.yml`** because my access couldn't
+push it into the workflows folder directly. Put it in place — do this from the
+GitHub website, logged in as yourself:
+
+1. Open **`setup/autopilot.yml`** in this repo and click **Raw** → select all → copy.
+2. Click **Add file → Create new file**. Name it exactly **`.github/workflows/autopilot.yml`**.
+3. Paste the contents → **Commit**.
+
+That's the scheduler installed. (You can leave the copy in `setup/` or delete it.)
 
 ## 1. Buffer API token → GitHub secret
 
