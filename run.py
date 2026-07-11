@@ -116,7 +116,8 @@ def post():
                 continue
         try:
             res = buffer_client.create_post(
-                it["channel_id"], it["text"], image_url=it["image_url"], dry_run=dry)
+                it["channel_id"], it["text"], image_url=it["image_url"],
+                platform=it["platform"], dry_run=dry)
             pid = res.get("id", "dry-run")
             print(f"  queued {it['platform']:9} {it['label']}  -> {pid}")
         except Exception as e:

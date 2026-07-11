@@ -25,7 +25,7 @@ mutation CreatePost($input: CreatePostInput!) {
 """
 
 
-def create_post(channel_id, text, image_url=None, token=None, dry_run=False):
+def create_post(channel_id, text, image_url=None, platform=None, token=None, dry_run=False):
     token = token or os.environ.get("BUFFER_TOKEN")
     if not token and not dry_run:
         raise RuntimeError("BUFFER_TOKEN is not set")
@@ -38,6 +38,10 @@ def create_post(channel_id, text, image_url=None, token=None, dry_run=False):
     }
     if image_url:
         post_input["assets"] = [{"image": {"url": image_url}}]
+    # Instagram requires an explicit post type; without it Buffer rejects the post
+    # ("Instagram posts require a type (post, story, or reel)").
+    if platform == "instagram":
+        post_input["metadata"] = {"instagram": {"type": "post", "shouldShareToFeed": True}}
 
     payload = {"query": _MUTATION, "variables": {"input": post_input}}
 
