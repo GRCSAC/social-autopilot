@@ -1,38 +1,35 @@
-# Setup — one step left (~2 minutes)
+# Setup — DONE ✅ (system is live)
 
-Almost everything is wired up and tested already:
+Everything is wired up, tested, and **posting for real**:
 
 - ✅ **Workflow installed** — `.github/workflows/autopilot.yml` (weekly Sunday cron).
-- ✅ **Repo public + image hosting live** — cards are served free via jsDelivr; the
-  `PUBLIC_BASE_URL` variable is set. Verified: a rendered card returns HTTP 200,
-  `image/jpeg`.
-- ✅ **Dry-run passed** — a full run on GitHub rendered the Instagram cards, published
-  them, and built the exact Buffer calls for 6 posts without sending anything.
+- ✅ **Repo public + image hosting live** — cards served free via jsDelivr; `PUBLIC_BASE_URL` set.
+- ✅ **Buffer token added** — GitHub secret `BUFFER_TOKEN` is set.
+- ✅ **First real run succeeded (2026-07-11)** — 3 LinkedIn + 3 Instagram posts queued to Buffer
+  (Instagram cards rendered, hosted, and attached by URL). Verified in the Buffer queue.
 
-## The only thing left: your Buffer API token
+From here it's hands-off: every Sunday it queues the next week of posts, and Buffer publishes
+them on your Mon/Wed/Fri schedule. To change what it posts, edit `content/*.json` (see
+[README.md](README.md)).
 
-I can't do this one — entering an API token into a field is a hard line for me, the
-same as typing a password. Two minutes:
+---
 
-1. Go to **buffer.com → Settings → Developers** (or **[buffer.com/developers](https://buffer.com/developers)**) and create an API token. On the free plan you get one. Copy it.
-2. In this repo: **Settings → Secrets and variables → Actions → New repository secret.**
-   - Name: `BUFFER_TOKEN`
-   - Value: *(paste the token)*
-3. Save. GitHub encrypts it; it's never printed in logs.
+## ⚠️ One recurring maintenance item: the Buffer token expires
 
-## Go live
+Buffer personal API keys are **short-lived** — the current one (`autopilot`) was created
+**2026-07-11** and **expires 2026-08-10** (30 days). When it expires, the Sunday run will start
+failing with an auth error and posting will silently stop.
 
-- **Test it for real:** repo → **Actions → Social Autopilot → Run workflow** (leave
-  dry_run **off**) → **Run**. It queues 6 posts; check your Buffer queues. They then
-  publish on your Mon/Wed/Fri schedule.
-- **Or just wait** — it runs automatically every Sunday.
+**To rotate it (~2 min, ~monthly):**
+1. buffer.com → Settings → API → Personal Keys → create a new key (or regenerate). Copy it.
+2. GitHub repo → Settings → Secrets and variables → Actions → `BUFFER_TOKEN` → **Update**.
 
-That's it. From here it's hands-off forever. To change what it posts, edit
-`content/*.json` (see [README.md](README.md)).
+If Buffer offers a longer expiry when creating the key, use it to make this less frequent.
 
-### If a post is rejected on the first real run
-The Buffer API image-attach shape is written to Buffer's official docs but couldn't
-be tested without your token. If Instagram posts error, it's almost certainly the
-`assets` field in `buffer_client.py` — the fix is one line, and the dry-run prints
-the exact call so it's easy to compare. Everything else (rendering, hosting, LinkedIn
-text, scheduling) is already proven working.
+## Manual controls
+- **Run now:** Actions → Social Autopilot → Run workflow (leave `dry_run` off).
+- **Test without posting:** same, but tick `dry_run`.
+
+### If a post is ever rejected
+The run is idempotent — a failed post doesn't advance the rotation, so it retries next run.
+The most likely cause is the free-plan queue cap (10/channel); it self-corrects as posts publish.
