@@ -12,7 +12,7 @@ uploads. New setup? Read **[SETUP.md](SETUP.md)** first (~15 min, one time).
 GitHub Actions (weekly cron)
   1. run.py build   → pick next items from content/*.json; render Instagram
                        cards (Pillow, bundled fonts) into public/
-  2. git commit public/  → Cloudflare Pages serves the images at a public URL
+  2. git commit public/  → this public repo's images are served free via jsDelivr
   3. run.py post    → verify images are live, then call the Buffer API to queue
                        each post (text for LinkedIn; text + image URL for Instagram)
   4. git commit content/state.json  → advance the rotation pointer
@@ -23,8 +23,10 @@ GitHub Actions (weekly cron)
 
 The trick that makes it fully automatic: Buffer attaches images **by URL**
 (`assets:[{image:{url}}]`), so the image never has to be uploaded through a
-browser — Buffer fetches it from Cloudflare. That's the wall that blocks manual
-automation, sidestepped.
+browser — Buffer fetches it from the CDN. That's the wall that blocks manual
+automation, sidestepped. This repo is public so jsDelivr can serve the card images
+(`https://cdn.jsdelivr.net/gh/GRCSAC/social-autopilot@main/public/cards/…`); it holds
+no secrets — the Buffer token lives only in GitHub Actions secrets.
 
 ## Files
 
