@@ -12,6 +12,17 @@ From here it's hands-off: every Sunday it queues the next week of posts, and Buf
 them on your Mon/Wed/Fri schedule. To change what it posts, edit `content/*.json` (see
 [README.md](README.md)).
 
+### When posts actually appear
+
+The Sunday job only *queues* to Buffer. Buffer publishes on its own per-channel slots, which
+are configured in Buffer and are not visible anywhere in this repo. Observed: the **Instagram
+Wednesday slot is around 12:07 ET**. So an empty feed on a post morning is normal and is not
+evidence of a failure. Check the Buffer queue before investigating anything.
+
+A queued post shows in Buffer as *sent*, *failed*, or *awaiting a reminder* (that last one
+means the channel cannot auto-publish and is waiting on a manual post). Those three states
+tell you far more than the feed does.
+
 ### House style for new posts
 
 Copy in `content/*.json` is written to read as Paul, not as a machine. When adding items, run
