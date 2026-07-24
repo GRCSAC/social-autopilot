@@ -1,4 +1,8 @@
-"""Render a 1080x1080 branded social card from a spec dict.
+"""Render branded social cards from a spec dict.
+
+Two shapes:
+  square (1080x1080)  Instagram
+  wide   (1200x627)   LinkedIn, sized for the feed's link-preview crop
 
 Two card types:
   quote   -> eyebrow + centered pull-quote + attribution, inside a brass frame
@@ -15,19 +19,20 @@ import brand as B
 
 ROOT = Path(__file__).resolve().parent
 COVERS = ROOT / "assets" / "covers"
-S = 1080
+S = 1080          # Instagram square
+W_W, W_H = 1200, 627   # LinkedIn landscape
 
 
-def _bg(size=S):
-    img = Image.new("RGB", (size, size), B.INK)
-    # subtle diagonal ink gradient for depth
-    top = Image.new("RGB", (size, size), B.INK_2)
-    mask = Image.new("L", (size, size))
+def _bg(w=S, h=None):
+    h = w if h is None else h
+    img = Image.new("RGB", (w, h), B.INK)
+    # subtle vertical ink gradient for depth
+    top = Image.new("RGB", (w, h), B.INK_2)
+    mask = Image.new("L", (w, h))
     md = ImageDraw.Draw(mask)
-    for y in range(size):
-        md.line([(0, y), (size, y)], fill=int(70 * (1 - y / size)))
-    img = Image.composite(top, img, mask)
-    return img
+    for y in range(h):
+        md.line([(0, y), (w, y)], fill=int(70 * (1 - y / h)))
+    return Image.composite(top, img, mask)
 
 
 def render_quote(spec, out_path):
@@ -89,6 +94,75 @@ def render_feature(spec, out_path):
 
     img.save(out_path, "JPEG", quality=90)
     return out_path
+
+
+# --------------------------------------------------------------- landscape
+def render_wide_quote(spec, out_path):
+    """1200x627. Half the vertical room of the square, so the type scale and
+    the frame inset are set for this shape rather than scaled down from it."""
+    img = _bg(W_W, W_H)
+    d = ImageDraw.Draw(img)
+    d.rectangle([28, 28, W_W - 28, W_H - 28], outline=B.BRASS, width=2)
+    cx = W_W // 2
+
+    eyebrow = spec.get("eyebrow", "").upper()
+    ef = B.label(20)
+    d.text((cx - B.text_w(d, eyebrow, ef) / 2, 74), eyebrow, font=ef, fill=B.BRASS_SOFT)
+    d.rectangle([cx - 36, 116, cx + 36, 119], fill=B.BRASS)
+
+    quote = '“' + spec["quote"].strip('"“”') + '”'
+    qf, lines, lh = B.fit_wrapped(d, quote, B.serif, max_w=W_W - 200,
+                                  max_h=300, hi=58, lo=30)
+    top = 156 + (300 - len(lines) * lh) // 2
+    B.draw_center_block(d, lines, qf, lh, cx, top, B.ON_INK)
+
+    d.rectangle([cx - 36, 512, cx + 36, 515], fill=B.BRASS)
+    attrib = spec.get("attribution", "PAUL ZAROU").upper()
+    af = B.label(20)
+    d.text((cx - B.text_w(d, attrib, af) / 2, 536), attrib, font=af, fill=B.MUTE)
+
+    img.save(out_path, "JPEG", quality=90)
+    return out_path
+
+
+def render_wide_feature(spec, out_path):
+    img = _bg(W_W, W_H)
+    d = ImageDraw.Draw(img)
+
+    cover = Image.open(COVERS / spec["cover"]).convert("RGB")
+    ch = 430
+    cw = int(ch * cover.width / cover.height)
+    cx = W_W - cw - 74
+    cy = (W_H - ch) // 2
+    img.paste(Image.new("RGB", (cw, ch), B.SHADOW), (cx + 10, cy + 13))
+    img.paste(cover, (cx, cy))
+    d.rectangle([cx, cy, cx + cw, cy + ch], outline=B.BRASS, width=2)
+
+    lx = 74
+    lw = cx - lx - 46
+    ef = B.label(20)
+    d.text((lx, 96), spec.get("eyebrow", "").upper(), font=ef, fill=B.BRASS_SOFT)
+    d.rectangle([lx, 134, lx + 58, 137], fill=B.BRASS)
+
+    # Centre the hook in the space between the eyebrow rule and the footer rule,
+    # so a three-word hook and a twenty-word one are both optically placed.
+    zone_top, zone_h = 168, 310
+    hf, lines, lh = B.fit_wrapped(d, spec["hook"], B.serif, max_w=lw,
+                                  max_h=zone_h, hi=48, lo=26)
+    B.draw_left_block(d, lines, hf, lh, lx,
+                      zone_top + (zone_h - len(lines) * lh) // 2, B.ON_INK)
+
+    d.rectangle([lx, 500, lx + 58, 503], fill=B.BRASS)
+    d.text((lx, 524), spec.get("footer", "").upper(), font=B.label(20), fill=B.MUTE)
+
+    img.save(out_path, "JPEG", quality=90)
+    return out_path
+
+
+def render_wide(spec, out_path):
+    if spec.get("type", "quote") == "feature":
+        return render_wide_feature(spec, out_path)
+    return render_wide_quote(spec, out_path)
 
 
 def render(spec, out_path):

@@ -70,11 +70,19 @@ def build():
 
     li = _load("linkedin")
     for it in _take(li, state["linkedin"], CONFIG["posts_per_run"]["linkedin"]):
+        # LinkedIn gets a landscape card (1200x627) rather than the square one,
+        # so it fills the feed's preview crop instead of being letterboxed.
+        img_url = None
+        card = it.get("card")
+        if card:
+            fname = f"{it['id']}-{stamp}-wide.jpg"
+            generate.render_wide(card, CARDS / fname)
+            img_url = f"{base}/cards/{fname}" if base else None
         items.append({
             "platform": "linkedin",
             "channel_id": CONFIG["channels"]["linkedin"],
             "text": it["text"],
-            "image_url": None,
+            "image_url": img_url,
             "label": it["id"],
         })
     next_state["linkedin"] = (state["linkedin"] + CONFIG["posts_per_run"]["linkedin"]) % len(li)
