@@ -1,5 +1,46 @@
 [
   {
+    "id": "ig-compassion-feature",
+    "type": "feature",
+    "eyebrow": "On Compassionate Leadership",
+    "hook": "You can be tough on the problem and gentle with the person.",
+    "cover": "compassion-unleashed.jpg",
+    "footer": "Compassion Unleashed  .  Out Now",
+    "caption": "You can be tough on the problem and gentle with the person. Most managers are taught to treat those as opposite settings on the same dial.\n\nCompassion Unleashed is about the ones who do both at once, and why their teams tend to stay. It comes out of two decades leading teams in financial services, an industry not known for softness.\n\nLink in bio.\n\n#CompassionateLeadership #Leadership #LeadershipBooks #Management #EmotionalIntelligence"
+  },
+  {
+    "id": "ig-say-it-early",
+    "type": "quote",
+    "eyebrow": "On Hard Conversations",
+    "quote": "The kindest version of hard feedback is the early one.",
+    "attribution": "Paul Zarou",
+    "caption": "The kindest version of hard feedback is the early one.\n\nWaiting feels generous at the time. The timing is wrong, or the person is already carrying enough. But feedback grows teeth while it sits, and when it finally lands the person hears months of it in a single sitting.\n\nTen uncomfortable minutes now, or a year they cannot get back. That is usually the real choice.\n\n#Leadership #Feedback #Management #NewManager #EmotionalIntelligence"
+  },
+  {
+    "id": "ig-promote-the-best",
+    "type": "quote",
+    "eyebrow": "Before You Promote",
+    "quote": "Doing the work well and helping others do it are different jobs.",
+    "attribution": "Paul Zarou",
+    "caption": "Doing the work well and helping others do it are different jobs. We keep handing out the second one as a prize for being good at the first.\n\nThe cost lands twice. You lose your strongest contributor to a calendar full of meetings, and you lose the manager they might have become, because nobody ever taught them the job.\n\nIf you are promoting someone this year, decide now who is going to teach them to manage. If the answer is nobody, the promotion is only a title change.\n\n#Leadership #Management #NewManager #LeadershipDevelopment #Mentorship"
+  },
+  {
+    "id": "ig-listened-or-waited-out",
+    "type": "quote",
+    "eyebrow": "On Listening",
+    "quote": "People can tell the difference between being listened to and being waited out.",
+    "attribution": "Paul Zarou",
+    "caption": "People can tell the difference between being listened to and being waited out.\n\nThe signs are small. Eyes drifting to a screen, or a nod that arrives half a second before the sentence ends. Nobody mentions it. But the next time there is something difficult to raise, it goes somewhere else, or nowhere.\n\nHow heard people feel decides how much of the truth ever reaches you. When a leader is genuinely surprised by their own team, the information was usually available long before.\n\n#Leadership #Listening #Management #Trust #CompassionateLeadership"
+  },
+  {
+    "id": "ig-exit-form",
+    "type": "quote",
+    "eyebrow": "On Why People Leave",
+    "quote": "Almost nobody writes the real reason on the exit form.",
+    "attribution": "Paul Zarou",
+    "caption": "Almost nobody writes the real reason on the exit form.\n\nThey write a better opportunity or a change of direction. True enough, and much easier than saying they stopped being able to picture a version of next year worth staying for. The honest answer is usually about a relationship rather than a role.\n\nWhich makes the exit interview the wrong instrument. It captures the moment of departure and misses the long stretch that produced it. If you want to know why people leave, ask the people who are staying, and ask before you have a reason to.\n\n#Leadership #Retention #Management #WorkplaceCulture #EmployeeExperience"
+  },
+  {
     "id": "ig-compassion-strength",
     "type": "quote",
     "eyebrow": "Compassion Unleashed",
