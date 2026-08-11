@@ -83,12 +83,54 @@ def _fewshot():
     return ig_ex, li[0]
 
 
-def _call(prompt, max_tokens=3000):
+_POST_ITEM = {
+    "instagram": {
+        "type": "object",
+        "properties": {
+            "eyebrow": {"type": "string", "description": "e.g. 'On Hard Conversations'"},
+            "quote": {"type": "string", "description": "one true sentence for the card"},
+            "caption_lines": {"type": "array", "items": {"type": "string"},
+                              "description": "2-4 paragraphs, one string each, no line breaks inside"},
+            "hashtags": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["eyebrow", "quote", "caption_lines", "hashtags"],
+    },
+    "linkedin": {
+        "type": "object",
+        "properties": {
+            "eyebrow": {"type": "string"},
+            "quote": {"type": "string", "description": "one sentence for the card"},
+            "body_lines": {"type": "array", "items": {"type": "string"},
+                           "description": "3-6 paragraphs ending with a question, one string each"},
+            "hashtags": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["eyebrow", "quote", "body_lines", "hashtags"],
+    },
+}
+POSTS_TOOL = {
+    "name": "emit_posts",
+    "description": "Return the generated social posts as structured data.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "instagram": {"type": "array", "items": _POST_ITEM["instagram"]},
+            "linkedin": {"type": "array", "items": _POST_ITEM["linkedin"]},
+        },
+        "required": ["instagram", "linkedin"],
+    },
+}
+
+
+def _call(prompt, max_tokens=4000):
+    """Force a structured tool response so the JSON is API-validated, never parsed
+    out of free text. Returns the tool input dict."""
     key = os.environ["ANTHROPIC_API_KEY"]  # KeyError here => misconfigured, run fails loudly
     body = json.dumps({
         "model": MODEL,
         "max_tokens": max_tokens,
         "system": SYSTEM,
+        "tools": [POSTS_TOOL],
+        "tool_choice": {"type": "tool", "name": "emit_posts"},
         "messages": [{"role": "user", "content": prompt}],
     }).encode("utf-8")
     req = urllib.request.Request(API_URL, data=body, method="POST", headers={
@@ -101,13 +143,10 @@ def _call(prompt, max_tokens=3000):
             data = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         raise RuntimeError(f"Anthropic HTTP {e.code}: {e.read().decode()[:400]}")
-    return "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
-
-
-def _extract_json(text):
-    t = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.S)  # strip code fences
-    m = re.search(r"\{.*\}", t, re.S)
-    return json.loads(m.group(0) if m else t)
+    for b in data.get("content", []):
+        if b.get("type") == "tool_use":
+            return b.get("input", {})
+    raise RuntimeError(f"no tool_use in response (stop_reason={data.get('stop_reason')})")
 
 
 def _prompt(n_ig, n_li):
@@ -153,9 +192,9 @@ def generate(n_ig, n_li, stamp):
     last_err = None
     for attempt in range(2):
         try:
-            data = _extract_json(_call(prompt))
+            data = _call(prompt)  # API-validated tool output, already a dict
             break
-        except Exception as e:  # bad JSON / transient — retry once
+        except Exception as e:  # transient network / API — retry once
             last_err = e
     else:
         raise RuntimeError(f"generation failed after retries: {last_err}")
