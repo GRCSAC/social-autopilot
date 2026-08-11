@@ -45,6 +45,28 @@ def _take(bank, start, n):
     return [bank[(start + i) % len(bank)] for i in range(n)]
 
 
+def _gather(stamp):
+    """Pick this run's items. config 'mode' == 'generate' asks Claude for fresh
+    posts; anything else (default) rotates the curated library. Returns
+    (instagram_items, linkedin_items, next_state)."""
+    n_ig = CONFIG["posts_per_run"]["instagram"]
+    n_li = CONFIG["posts_per_run"]["linkedin"]
+    state = json.loads(STATE.read_text(encoding="utf-8"))
+
+    if CONFIG.get("mode") == "generate":
+        import llm_content
+        ig_items, li_items = llm_content.generate(n_ig, n_li, stamp)
+        return ig_items, li_items, dict(state)  # generated content does not rotate
+
+    next_state = dict(state)
+    ig, li = _load("instagram"), _load("linkedin")
+    ig_items = _take(ig, state["instagram"], n_ig)
+    li_items = _take(li, state["linkedin"], n_li)
+    next_state["instagram"] = (state["instagram"] + n_ig) % len(ig)
+    next_state["linkedin"] = (state["linkedin"] + n_li) % len(li)
+    return ig_items, li_items, next_state
+
+
 def build():
     base = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
     if not base:
@@ -52,11 +74,10 @@ def build():
     CARDS.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
 
-    state = json.loads(STATE.read_text(encoding="utf-8"))
-    items, next_state = [], dict(state)
+    ig_items, li_items, next_state = _gather(stamp)
+    items = []
 
-    ig = _load("instagram")
-    for it in _take(ig, state["instagram"], CONFIG["posts_per_run"]["instagram"]):
+    for it in ig_items:
         fname = f"{it['id']}-{stamp}.jpg"
         generate.render(it, CARDS / fname)
         items.append({
@@ -66,10 +87,8 @@ def build():
             "image_url": f"{base}/cards/{fname}" if base else None,
             "label": it["id"],
         })
-    next_state["instagram"] = (state["instagram"] + CONFIG["posts_per_run"]["instagram"]) % len(ig)
 
-    li = _load("linkedin")
-    for it in _take(li, state["linkedin"], CONFIG["posts_per_run"]["linkedin"]):
+    for it in li_items:
         # LinkedIn gets a landscape card (1200x627) rather than the square one,
         # so it fills the feed's preview crop instead of being letterboxed.
         img_url = None
@@ -85,10 +104,9 @@ def build():
             "image_url": img_url,
             "label": it["id"],
         })
-    next_state["linkedin"] = (state["linkedin"] + CONFIG["posts_per_run"]["linkedin"]) % len(li)
 
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
-    print(f"Built batch: {len(items)} posts "
+    print(f"Built batch ({CONFIG.get('mode', 'library')}): {len(items)} posts "
           f"({CONFIG['posts_per_run']['instagram']} IG + {CONFIG['posts_per_run']['linkedin']} LI)")
     for it in items:
         print(f"  - {it['platform']:9} {it['label']}")
