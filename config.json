@@ -1,5 +1,5 @@
 {
-  "mode": "library",
+  "mode": "generate",
   "channels": {
     "linkedin":  "6a50e20940483446288f2141",
     "instagram": "6a5181b5404834462892740c"
