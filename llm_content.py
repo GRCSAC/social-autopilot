@@ -51,6 +51,16 @@ def _sanitize(s):
     return s.strip()
 
 
+def _compose(lines, tags):
+    """Join paragraph strings with blank lines, then a hashtag line. Arrays in,
+    so the model never has to emit raw newlines inside a JSON string."""
+    body = "\n\n".join(_sanitize(l) for l in (lines or []) if l and l.strip())
+    tagline = " ".join(
+        (t if t.startswith("#") else "#" + t.lstrip("#")).strip()
+        for t in (tags or []) if t and t.strip())
+    return (body + ("\n\n" + tagline if tagline else "")).strip()
+
+
 def _recent():
     if RECENT.exists():
         try:
@@ -95,41 +105,46 @@ def _call(prompt, max_tokens=3000):
 
 
 def _extract_json(text):
-    m = re.search(r"\{.*\}", text, re.S)
-    return json.loads(m.group(0) if m else text)
+    t = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.S)  # strip code fences
+    m = re.search(r"\{.*\}", t, re.S)
+    return json.loads(m.group(0) if m else t)
 
 
 def _prompt(n_ig, n_li):
     ig_ex, li_ex = _fewshot()
-    ig_shape = {k: ig_ex[k] for k in ("eyebrow", "quote", "caption") if k in ig_ex}
-    li_shape = {"text": li_ex["text"], "card": li_ex.get("card")}
     avoid = "\n".join(f"- {q}" for q in _recent()[-24:]) or "(none yet)"
-    return f"""Write fresh leadership posts. Return ONLY a JSON object, no prose around it.
+    # Show the voice via the real caption text, but require ARRAY output (each
+    # paragraph its own string) so the JSON never contains raw line breaks.
+    return f"""Write fresh leadership posts. Return ONLY a JSON object, no prose or code fences.
 
-Match the VOICE and SHAPE of these real examples, but write entirely new ideas.
+Match the VOICE of these real examples, but write entirely new ideas:
 
-Instagram quote-card example:
-{json.dumps(ig_shape, ensure_ascii=False, indent=2)}
+Example Instagram quote line: "{ig_ex.get('quote', '')}"
+Example Instagram caption:
+{ig_ex.get('caption', '')}
 
-LinkedIn example:
-{json.dumps(li_shape, ensure_ascii=False, indent=2)}
+Example LinkedIn post:
+{li_ex.get('text', '')}
 
 Do NOT repeat these recently used lines or their themes:
 {avoid}
 
-Return exactly this JSON shape:
+Return exactly this JSON shape. Every paragraph is a separate string with NO line
+breaks inside it. hashtags are without the leading text, each starting with #:
 {{
   "instagram": [
-    {{ "eyebrow": "On <topic>", "quote": "one true sentence, straight quotes",
-       "caption": "2 to 4 short paragraphs, then a blank line, then 4 to 6 plain hashtags" }}
+    {{ "eyebrow": "On <topic>", "quote": "one true sentence",
+       "caption_lines": ["paragraph one", "paragraph two"],
+       "hashtags": ["#Leadership", "#Management"] }}
   ],
   "linkedin": [
     {{ "eyebrow": "On <topic>", "quote": "one sentence for the card",
-       "text": "3 to 6 short paragraphs ending with a question, then a blank line and a few hashtags" }}
+       "body_lines": ["paragraph one", "paragraph two", "a closing question?"],
+       "hashtags": ["#Leadership", "#Feedback"] }}
   ]
 }}
-Give {n_ig} instagram items and {n_li} linkedin items. Every post a distinct idea.
-No em dashes, no en dashes, no curly quotes."""
+Give {n_ig} instagram items and {n_li} linkedin items. Every post a distinct idea,
+concrete and true. No em dashes, no en dashes, no curly quotes."""
 
 
 def generate(n_ig, n_li, stamp):
@@ -152,18 +167,26 @@ def generate(n_ig, n_li, stamp):
         out_ig.append({
             "id": f"ig-gen-{stamp}-{i + 1}", "type": "quote",
             "eyebrow": _sanitize(x.get("eyebrow", "")), "quote": q,
-            "attribution": "Paul Zarou", "caption": _sanitize(x["caption"]),
+            "attribution": "Paul Zarou",
+            "caption": _compose(x.get("caption_lines", []), x.get("hashtags")),
         })
     for i, x in enumerate(data.get("linkedin", [])[:n_li]):
         q = _sanitize(x["quote"])
         quotes.append(q)
         out_li.append({
-            "id": f"li-gen-{stamp}-{i + 1}", "text": _sanitize(x["text"]),
+            "id": f"li-gen-{stamp}-{i + 1}",
+            "text": _compose(x.get("body_lines", []), x.get("hashtags")),
             "card": {"type": "quote", "eyebrow": _sanitize(x.get("eyebrow", "")),
                      "quote": q, "attribution": "Paul Zarou"},
         })
 
     if len(out_ig) < n_ig or len(out_li) < n_li:
         raise RuntimeError(f"generation short: got {len(out_ig)} IG / {len(out_li)} LI")
+    for it in out_ig:
+        if not it["caption"] or not it["quote"]:
+            raise RuntimeError("generation produced an empty caption/quote")
+    for it in out_li:
+        if not it["text"] or not it["card"]["quote"]:
+            raise RuntimeError("generation produced an empty post/quote")
     _save_recent(quotes)
     return out_ig, out_li
