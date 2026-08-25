@@ -1,10 +1,17 @@
 {
   "channels": {
     "linkedin":  "6a50e20940483446288f2141",
-    "instagram": "6a5181b5404834462892740c"
+    "instagram": "6a5181b5404834462892740c",
+    "netvane_linkedin": "REPLACE_WITH_NETVANE_LINKEDIN_CHANNEL_ID"
   },
   "posts_per_run": {
     "linkedin":  3,
-    "instagram": 3
-  }
+    "instagram": 3,
+    "netvane_linkedin": 2
+  },
+  "streams": [
+    { "name": "instagram",        "file": "instagram",        "platform": "instagram", "layout": "square" },
+    { "name": "linkedin",         "file": "linkedin",         "platform": "linkedin",  "layout": "wide" },
+    { "name": "netvane_linkedin", "file": "netvane_linkedin", "platform": "linkedin",  "layout": "wide" }
+  ]
 }

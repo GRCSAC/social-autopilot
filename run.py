@@ -55,41 +55,41 @@ def build():
     state = json.loads(STATE.read_text(encoding="utf-8"))
     items, next_state = [], dict(state)
 
-    ig = _load("instagram")
-    for it in _take(ig, state["instagram"], CONFIG["posts_per_run"]["instagram"]):
-        fname = f"{it['id']}-{stamp}.jpg"
-        generate.render(it, CARDS / fname)
-        items.append({
-            "platform": "instagram",
-            "channel_id": CONFIG["channels"]["instagram"],
-            "text": it["caption"],
-            "image_url": f"{base}/cards/{fname}" if base else None,
-            "label": it["id"],
-        })
-    next_state["instagram"] = (state["instagram"] + CONFIG["posts_per_run"]["instagram"]) % len(ig)
-
-    li = _load("linkedin")
-    for it in _take(li, state["linkedin"], CONFIG["posts_per_run"]["linkedin"]):
-        # LinkedIn gets a landscape card (1200x627) rather than the square one,
-        # so it fills the feed's preview crop instead of being letterboxed.
-        img_url = None
-        card = it.get("card")
-        if card:
-            fname = f"{it['id']}-{stamp}-wide.jpg"
-            generate.render_wide(card, CARDS / fname)
-            img_url = f"{base}/cards/{fname}" if base else None
-        items.append({
-            "platform": "linkedin",
-            "channel_id": CONFIG["channels"]["linkedin"],
-            "text": it["text"],
-            "image_url": img_url,
-            "label": it["id"],
-        })
-    next_state["linkedin"] = (state["linkedin"] + CONFIG["posts_per_run"]["linkedin"]) % len(li)
+    # Each stream is an independent rotation over its own content file, with its
+    # own Buffer channel, per-run budget, and cursor in state.json. "square" is an
+    # Instagram card rendered from the item itself; "wide" is a LinkedIn landscape
+    # card rendered from it["card"], or a text-only post when the item has no card.
+    for stream in CONFIG["streams"]:
+        name = stream["name"]
+        bank = _load(stream["file"])
+        per_run = CONFIG["posts_per_run"][name]
+        channel = CONFIG["channels"][name]
+        start = state.get(name, 0)
+        for it in _take(bank, start, per_run):
+            img_url = None
+            if stream["layout"] == "square":
+                fname = f"{it['id']}-{stamp}.jpg"
+                generate.render(it, CARDS / fname)
+                img_url = f"{base}/cards/{fname}" if base else None
+                text = it["caption"]
+            else:
+                card = it.get("card")
+                if card:
+                    fname = f"{it['id']}-{stamp}-wide.jpg"
+                    generate.render_wide(card, CARDS / fname)
+                    img_url = f"{base}/cards/{fname}" if base else None
+                text = it["text"]
+            items.append({
+                "platform": stream["platform"],
+                "channel_id": channel,
+                "text": text,
+                "image_url": img_url,
+                "label": it["id"],
+            })
+        next_state[name] = (start + per_run) % len(bank)
 
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
-    print(f"Built batch: {len(items)} posts "
-          f"({CONFIG['posts_per_run']['instagram']} IG + {CONFIG['posts_per_run']['linkedin']} LI)")
+    print(f"Built batch: {len(items)} posts across {len(CONFIG['streams'])} streams")
     for it in items:
         print(f"  - {it['platform']:9} {it['label']}")
 
