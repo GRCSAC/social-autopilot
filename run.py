@@ -105,9 +105,34 @@ def build():
             "label": it["id"],
         })
 
+    # NetVane: a curated, human-written LinkedIn stream that always runs (never
+    # LLM-generated), on its own cursor in state.json, appended alongside the book
+    # content. NetVane items carry no card, so they post as text-only.
+    n_nv = CONFIG["posts_per_run"].get("netvane_linkedin", 0)
+    nv_channel = CONFIG["channels"].get("netvane_linkedin")
+    if n_nv and nv_channel:
+        nv = _load("netvane_linkedin")
+        start = next_state.get("netvane_linkedin", 0)
+        for it in _take(nv, start, n_nv):
+            img_url = None
+            card = it.get("card")
+            if card:
+                fname = f"{it['id']}-{stamp}-wide.jpg"
+                generate.render_wide(card, CARDS / fname)
+                img_url = f"{base}/cards/{fname}" if base else None
+            items.append({
+                "platform": "linkedin",
+                "channel_id": nv_channel,
+                "text": it["text"],
+                "image_url": img_url,
+                "label": it["id"],
+            })
+        next_state["netvane_linkedin"] = (start + n_nv) % len(nv)
+
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
     print(f"Built batch ({CONFIG.get('mode', 'library')}): {len(items)} posts "
-          f"({CONFIG['posts_per_run']['instagram']} IG + {CONFIG['posts_per_run']['linkedin']} LI)")
+          f"({CONFIG['posts_per_run']['instagram']} IG + {CONFIG['posts_per_run']['linkedin']} LI "
+          f"+ {n_nv} NetVane)")
     for it in items:
         print(f"  - {it['platform']:9} {it['label']}")
 
