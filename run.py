@@ -45,6 +45,28 @@ def _take(bank, start, n):
     return [bank[(start + i) % len(bank)] for i in range(n)]
 
 
+def _gather(stamp):
+    """Pick this run's items. config 'mode' == 'generate' asks Claude for fresh
+    posts; anything else (default) rotates the curated library. Returns
+    (instagram_items, linkedin_items, next_state)."""
+    n_ig = CONFIG["posts_per_run"]["instagram"]
+    n_li = CONFIG["posts_per_run"]["linkedin"]
+    state = json.loads(STATE.read_text(encoding="utf-8"))
+
+    if CONFIG.get("mode") == "generate":
+        import llm_content
+        ig_items, li_items = llm_content.generate(n_ig, n_li, stamp)
+        return ig_items, li_items, dict(state)  # generated content does not rotate
+
+    next_state = dict(state)
+    ig, li = _load("instagram"), _load("linkedin")
+    ig_items = _take(ig, state["instagram"], n_ig)
+    li_items = _take(li, state["linkedin"], n_li)
+    next_state["instagram"] = (state["instagram"] + n_ig) % len(ig)
+    next_state["linkedin"] = (state["linkedin"] + n_li) % len(li)
+    return ig_items, li_items, next_state
+
+
 def build():
     base = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
     if not base:
@@ -52,44 +74,65 @@ def build():
     CARDS.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
 
-    state = json.loads(STATE.read_text(encoding="utf-8"))
-    items, next_state = [], dict(state)
+    ig_items, li_items, next_state = _gather(stamp)
+    items = []
 
-    # Each stream is an independent rotation over its own content file, with its
-    # own Buffer channel, per-run budget, and cursor in state.json. "square" is an
-    # Instagram card rendered from the item itself; "wide" is a LinkedIn landscape
-    # card rendered from it["card"], or a text-only post when the item has no card.
-    for stream in CONFIG["streams"]:
-        name = stream["name"]
-        bank = _load(stream["file"])
-        per_run = CONFIG["posts_per_run"][name]
-        channel = CONFIG["channels"][name]
-        start = state.get(name, 0)
-        for it in _take(bank, start, per_run):
+    for it in ig_items:
+        fname = f"{it['id']}-{stamp}.jpg"
+        generate.render(it, CARDS / fname)
+        items.append({
+            "platform": "instagram",
+            "channel_id": CONFIG["channels"]["instagram"],
+            "text": it["caption"],
+            "image_url": f"{base}/cards/{fname}" if base else None,
+            "label": it["id"],
+        })
+
+    for it in li_items:
+        # LinkedIn gets a landscape card (1200x627) rather than the square one,
+        # so it fills the feed's preview crop instead of being letterboxed.
+        img_url = None
+        card = it.get("card")
+        if card:
+            fname = f"{it['id']}-{stamp}-wide.jpg"
+            generate.render_wide(card, CARDS / fname)
+            img_url = f"{base}/cards/{fname}" if base else None
+        items.append({
+            "platform": "linkedin",
+            "channel_id": CONFIG["channels"]["linkedin"],
+            "text": it["text"],
+            "image_url": img_url,
+            "label": it["id"],
+        })
+
+    # NetVane: a curated, human-written LinkedIn stream that always runs (never
+    # LLM-generated), on its own cursor in state.json, appended alongside the book
+    # content. NetVane items carry no card, so they post as text-only.
+    n_nv = CONFIG["posts_per_run"].get("netvane_linkedin", 0)
+    nv_channel = CONFIG["channels"].get("netvane_linkedin")
+    if n_nv and nv_channel:
+        nv = _load("netvane_linkedin")
+        start = next_state.get("netvane_linkedin", 0)
+        for it in _take(nv, start, n_nv):
             img_url = None
-            if stream["layout"] == "square":
-                fname = f"{it['id']}-{stamp}.jpg"
-                generate.render(it, CARDS / fname)
+            card = it.get("card")
+            if card:
+                fname = f"{it['id']}-{stamp}-wide.jpg"
+                generate.render_wide(card, CARDS / fname)
                 img_url = f"{base}/cards/{fname}" if base else None
-                text = it["caption"]
-            else:
-                card = it.get("card")
-                if card:
-                    fname = f"{it['id']}-{stamp}-wide.jpg"
-                    generate.render_wide(card, CARDS / fname)
-                    img_url = f"{base}/cards/{fname}" if base else None
-                text = it["text"]
             items.append({
-                "platform": stream["platform"],
-                "channel_id": channel,
-                "text": text,
+                "platform": "linkedin",
+                "channel_id": nv_channel,
+                "text": it["text"],
                 "image_url": img_url,
                 "label": it["id"],
             })
-        next_state[name] = (start + per_run) % len(bank)
+        next_state["netvane_linkedin"] = (start + n_nv) % len(nv)
 
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
-    print(f"Built batch: {len(items)} posts across {len(CONFIG['streams'])} streams")
+    print(f"Built batch ({CONFIG.get('mode', 'library')}): {len(items)} posts "
+          f"({CONFIG['posts_per_run']['instagram']} IG + {CONFIG['posts_per_run']['linkedin']} LI "
+          f"+ {n_nv} NetVane)")
     for it in items:
         print(f"  - {it['platform']:9} {it['label']}")
 
