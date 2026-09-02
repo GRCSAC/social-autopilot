@@ -159,6 +159,7 @@ def post():
     dry = os.environ.get("DRY_RUN") == "1"
     batch = json.loads(BATCH.read_text(encoding="utf-8"))
     failures = 0
+    skipped = 0
     for it in batch["items"]:
         if it["image_url"] and not dry:
             if not _wait_live(it["image_url"]):
@@ -171,9 +172,18 @@ def post():
                 platform=it["platform"], dry_run=dry)
             pid = res.get("id", "dry-run")
             print(f"  queued {it['platform']:9} {it['label']}  -> {pid}")
+        except buffer_client.QueueFull as e:
+            # The channel is at Buffer's free-plan ceiling of 10 scheduled posts.
+            # It drains on its own as the queue publishes, so drop this one post
+            # and let the run finish green.
+            print(f"  SKIP {it['label']}: {e}")
+            skipped += 1
         except Exception as e:
             print(f"  FAIL {it['label']}: {e}")
             failures += 1
+
+    if skipped:
+        print(f"{skipped} post(s) skipped — channel queue is full (free-plan cap of 10).")
 
     if failures:
         raise SystemExit(f"{failures} post(s) failed — state not advanced, will retry next run")

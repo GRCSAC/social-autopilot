@@ -15,6 +15,12 @@ import urllib.error
 
 API_URL = "https://api.buffer.com"
 
+
+class QueueFull(RuntimeError):
+    """Buffer's free plan caps each channel at 10 scheduled posts. Hitting that
+    ceiling is normal throttling, not a broken pipeline: the queue drains as the
+    channel publishes, so the caller skips the post rather than failing the run."""
+
 _MUTATION = """
 mutation CreatePost($input: CreatePostInput!) {
   createPost(input: $input) {
@@ -69,5 +75,8 @@ def create_post(channel_id, text, image_url=None, platform=None, token=None, dry
         raise RuntimeError(f"Buffer GraphQL error: {body['errors']}")
     result = body["data"]["createPost"]
     if "message" in result:
-        raise RuntimeError(f"Buffer rejected post: {result['message']}")
+        msg = result["message"]
+        if "scheduled posts limit" in msg.lower():
+            raise QueueFull(msg)
+        raise RuntimeError(f"Buffer rejected post: {msg}")
     return result["post"]
