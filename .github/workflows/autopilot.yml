@@ -13,6 +13,10 @@ on:
         description: "Dry run (build + print Buffer calls, do not post or advance)"
         type: boolean
         default: false
+      health_only:
+        description: "Only check channel health, then stop"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -39,10 +43,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Check channels can actually publish
+        run: python health.py --strict
+
       - name: Build batch (render Instagram cards)
+        if: ${{ !inputs.health_only }}
         run: python run.py build
 
       - name: Publish images (commit -> Cloudflare Pages serves them)
+        if: ${{ !inputs.health_only }}
         run: |
           git config user.name  "social-autopilot[bot]"
           git config user.email "autopilot@users.noreply.github.com"
@@ -55,10 +64,11 @@ jobs:
           fi
 
       - name: Queue posts to Buffer
+        if: ${{ !inputs.health_only }}
         run: python run.py post
 
       - name: Save rotation state
-        if: env.DRY_RUN != '1'
+        if: ${{ env.DRY_RUN != '1' && !inputs.health_only }}
         run: |
           git config user.name  "social-autopilot[bot]"
           git config user.email "autopilot@users.noreply.github.com"
