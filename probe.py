@@ -1,18 +1,30 @@
-import os
-from health import gql
+import os, json, urllib.request, urllib.error
 t = os.environ["BUFFER_TOKEN"]
-q = gql('{ __type(name: "Query") { fields { name args { name type { kind name ofType { kind name } } } } } }', t)
-for f in q["__type"]["fields"]:
-    if f["name"] == "posts":
-        for a in f["args"]:
-            ty = a["type"]; nm = ty.get("name") or (ty.get("ofType") or {}).get("name")
-            print("ARG", a["name"], "->", nm)
-for tn in ("PostsInput", "PostStatus"):
-    ty = gql('{ __type(name: "%s") { kind inputFields { name type { kind name ofType { kind name } } } enumValues { name } } }' % tn, t)["__type"]
-    if not ty: print(tn, "-> not found"); continue
-    print(f"\n{tn} ({ty['kind']}):")
-    for f in (ty.get("inputFields") or []):
-        x = f["type"]; nm = x.get("name") or (x.get("ofType") or {}).get("name")
-        print(f"   {f['name']}: {nm}")
-    for e in (ty.get("enumValues") or []):
-        print("   value:", e["name"])
+def raw(q, v=None):
+    p={"query":q}
+    if v: p["variables"]=v
+    r=urllib.request.Request("https://api.buffer.com",data=json.dumps(p).encode(),
+        headers={"Content-Type":"application/json","Authorization":f"Bearer {t}"},method="POST")
+    try:
+        with urllib.request.urlopen(r,timeout=45) as x: return json.loads(x.read().decode())
+    except urllib.error.HTTPError as e: return {"http":e.code,"body":e.read().decode()[:300]}
+
+org = raw('{ account { organizations { id } } }')["data"]["account"]["organizations"][0]["id"]
+print("ORG:", org)
+cfg = json.load(open("config.json",encoding="utf-8"))["channels"]
+ig = cfg["instagram"]
+
+shapes = [
+ ('A', '{ posts(first: 15, input: { organizationId: "%s" }) { edges { node { id status error channelId sentAt } } } }' % org),
+ ('B', '{ posts(first: 15, input: { channelIds: ["%s"] }) { edges { node { id status error sentAt } } } }' % ig),
+ ('C', '{ posts(first: 15, input: { organizationId: "%s", channelIds: ["%s"] }) { edges { node { id status error sentAt text } } } }' % (org, ig)),
+]
+for name, q in shapes:
+    r = raw(q)
+    if "errors" in r or "http" in r:
+        msg = str(r.get("errors") or r)[:220]
+        print(f"\n{name}: FAILED {msg}")
+    else:
+        print(f"\n{name}: OK")
+        print(json.dumps(r["data"], indent=1)[:1500])
+        break
