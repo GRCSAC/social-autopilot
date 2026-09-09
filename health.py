@@ -134,15 +134,15 @@ def main():
     by_id = {cid: label for label, cid in configured.items()}
     if failures:
         print()
-    for cid, items in failures.items():
+    for cid, (when, msg) in failures.items():
         label = by_id.get(cid, cid)
-        newest = sorted(items, key=lambda x: x[0] or "")[-1]
-        print(f"  FAILED TO PUBLISH {label:18} {len(items)} post(s), latest {newest[0]}")
-        print(f"              {newest[1]}")
+        print(f"  FAILED TO PUBLISH {label:18} latest finished post errored ({when})")
+        print(f"              {msg}")
         if queued.get(cid):
-            print(f"              {queued[cid]} more queued on this channel; they will"
-                  f" fail the same way until it is reconnected.")
-        problems.append(f"{label}: {len(items)} failed to publish -- {newest[1]}")
+            print(f"              {queued[cid]} queued behind it; they will fail the same"
+                  f" way until it is reconnected.")
+        print("              Clears itself once a post on this channel sends successfully.")
+        problems.append(f"{label}: latest post failed -- {msg}")
 
     if problems:
         print("\n" + "\n".join(f"PROBLEM: {p}" for p in problems))
@@ -153,7 +153,7 @@ def main():
         # instead of the whole run dying and taking healthy channels with it.
         bad = {}
         for cid, items in failures.items():
-            bad[cid] = sorted(items, key=lambda x: x[0] or "")[-1][1]
+            bad[cid] = items[1]
         Path("content/unhealthy.json").write_text(
             json.dumps(bad, indent=2) + "\n", encoding="utf-8")
         print(f"\nWrote content/unhealthy.json ({len(bad)} unhealthy channel(s)).")
@@ -184,14 +184,30 @@ def _recent_posts(token, org_id, limit=60):
 
 
 def publish_failures(nodes):
-    """{channel_id: [(dueAt, message), ...]} for posts Buffer could not publish."""
-    out = {}
+    """{channel_id: (dueAt, message)} for channels whose LATEST finished post
+    was a failure.
+
+    Deliberately not "any error in the window": an error stays in Buffer's
+    history forever, so that would flag a channel for good and block it long
+    after it was fixed. Buffer gives no positive "reconnected" signal either -
+    Channel.updatedAt did not move when the Instagram channel was reconnected
+    on 2026-09-09 (it still read 2026-07-10), and isDisconnected never flipped.
+    The only trustworthy evidence a channel works is a post that actually sent,
+    so compare the newest finished post of each kind and let a later success
+    clear the flag on its own.
+    """
+    latest = {}
     for n in nodes:
-        if n.get("status") != "error":
-            continue
-        msg = (n.get("error") or {}).get("message") or "(no message)"
-        out.setdefault(n["channelId"], []).append((n.get("dueAt"), msg))
-    return out
+        status = n.get("status")
+        if status not in ("sent", "error"):
+            continue          # scheduled/sending prove nothing either way
+        when = n.get("sentAt") or n.get("dueAt") or ""
+        cid = n["channelId"]
+        if cid not in latest or when > latest[cid][0]:
+            msg = (n.get("error") or {}).get("message") or "(no message)"
+            latest[cid] = (when, status, msg)
+    return {cid: (when, msg) for cid, (when, status, msg) in latest.items()
+            if status == "error"}
 
 
 def still_queued(nodes):

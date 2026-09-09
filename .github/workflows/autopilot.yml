@@ -46,10 +46,6 @@ jobs:
       - name: Check channels can actually publish
         run: python health.py --report
 
-      - name: Probe
-        if: ${{ inputs.health_only }}
-        run: python probe.py
-
       - name: Build batch (render Instagram cards)
         if: ${{ !inputs.health_only }}
         run: python run.py build
