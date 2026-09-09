@@ -2,3 +2,4 @@ _batch.json
 __pycache__/
 *.pyc
 .env
+content/unhealthy.json

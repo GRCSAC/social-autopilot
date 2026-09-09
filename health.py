@@ -20,6 +20,7 @@ import os
 import sys
 import urllib.request
 import urllib.error
+from pathlib import Path
 
 API_URL = "https://api.buffer.com"
 
@@ -90,6 +91,7 @@ def looks_unhealthy(field, value):
 
 def main():
     strict = "--strict" in sys.argv
+    report = "--report" in sys.argv
     token = os.environ.get("BUFFER_TOKEN")
     if not token:
         raise SystemExit("BUFFER_TOKEN is not set")
@@ -146,6 +148,16 @@ def main():
         print("\n" + "\n".join(f"PROBLEM: {p}" for p in problems))
         print("\nA channel that has lost authorisation must be reconnected in Buffer:")
         print("  Buffer -> Channels -> the channel -> Refresh/Reconnect, then re-authorise.")
+    if report:
+        # Record which channels cannot publish so run.py can skip just those,
+        # instead of the whole run dying and taking healthy channels with it.
+        bad = {}
+        for cid, items in failures.items():
+            bad[cid] = sorted(items, key=lambda x: x[0] or "")[-1][1]
+        Path("content/unhealthy.json").write_text(
+            json.dumps(bad, indent=2) + "\n", encoding="utf-8")
+        print(f"\nWrote content/unhealthy.json ({len(bad)} unhealthy channel(s)).")
+
         if strict:
             raise SystemExit(f"{len(problems)} channel(s) cannot publish")
     else:

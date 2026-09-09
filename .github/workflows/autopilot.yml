@@ -44,7 +44,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Check channels can actually publish
-        run: python health.py --strict
+        run: python health.py --report
 
       - name: Build batch (render Instagram cards)
         if: ${{ !inputs.health_only }}
@@ -79,3 +79,14 @@ jobs:
             git commit -m "autopilot: advance rotation ($(date -u +%F))"
             git push
           fi
+
+      - name: Fail if any channel could not publish
+        if: always()
+        run: |
+          if [ -s content/unhealthy.json ] && [ "$(cat content/unhealthy.json)" != "{}" ]; then
+            echo "A channel could not publish; its posts were skipped."
+            cat content/unhealthy.json
+            echo "Reconnect it in Buffer: Channels -> the channel -> Refresh/Reconnect."
+            exit 1
+          fi
+          echo "All channels healthy."

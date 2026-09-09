@@ -158,9 +158,22 @@ def _wait_live(url, tries=12, delay=20):
 def post():
     dry = os.environ.get("DRY_RUN") == "1"
     batch = json.loads(BATCH.read_text(encoding="utf-8"))
+    # Channels health.py found unable to publish. Skip just those: a lapsed
+    # Instagram must not stop LinkedIn from posting. The run is still marked
+    # red afterwards by the workflow, so the problem stays loud.
+    unhealthy = {}
+    uh = Path("content/unhealthy.json")
+    if uh.exists():
+        unhealthy = json.loads(uh.read_text(encoding="utf-8"))
+    blocked = 0
     failures = 0
     skipped = 0
     for it in batch["items"]:
+        if it["channel_id"] in unhealthy:
+            reason = unhealthy[it["channel_id"]]
+            print(f"  BLOCKED {it['label']}: channel cannot publish ({reason})")
+            blocked += 1
+            continue
         if it["image_url"] and not dry:
             if not _wait_live(it["image_url"]):
                 print(f"  FAIL {it['label']}: image never became reachable")
@@ -184,6 +197,10 @@ def post():
 
     if skipped:
         print(f"{skipped} post(s) skipped — channel queue is full (free-plan cap of 10).")
+
+    if blocked:
+        print(f"{blocked} post(s) blocked - channel cannot publish. State still advances")
+        print("so healthy channels do not repeat content next run.")
 
     if failures:
         raise SystemExit(f"{failures} post(s) failed — state not advanced, will retry next run")
