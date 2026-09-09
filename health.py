@@ -126,6 +126,22 @@ def main():
         else:
             print(f"  ok        {label:18} {c['service']:10} {name}")
 
+    # The decisive check: did Buffer fail to PUBLISH anything recently?
+    nodes = _recent_posts(token, orgs[0]["id"])
+    failures, queued = publish_failures(nodes), still_queued(nodes)
+    by_id = {cid: label for label, cid in configured.items()}
+    if failures:
+        print()
+    for cid, items in failures.items():
+        label = by_id.get(cid, cid)
+        newest = sorted(items, key=lambda x: x[0] or "")[-1]
+        print(f"  FAILED TO PUBLISH {label:18} {len(items)} post(s), latest {newest[0]}")
+        print(f"              {newest[1]}")
+        if queued.get(cid):
+            print(f"              {queued[cid]} more queued on this channel; they will"
+                  f" fail the same way until it is reconnected.")
+        problems.append(f"{label}: {len(items)} failed to publish -- {newest[1]}")
+
     if problems:
         print("\n" + "\n".join(f"PROBLEM: {p}" for p in problems))
         print("\nA channel that has lost authorisation must be reconnected in Buffer:")
@@ -134,6 +150,46 @@ def main():
             raise SystemExit(f"{len(problems)} channel(s) cannot publish")
     else:
         print("\nAll configured channels look able to publish.")
+
+
+
+# --- publish-failure detection -------------------------------------------
+# Buffer's Channel.isDisconnected does NOT flip when authorisation lapses: on
+# 2026-09-09 an Instagram post failed with "Buffer has lost authorization to
+# post on your behalf" while the channel still reported isDisconnected=False.
+# The reliable signal is the posts themselves - a failed one carries
+# status="error" and an error.message. That is what the preflight relies on.
+
+_POSTS_Q = """
+{ posts(first: %d, input: { organizationId: "%s" }) {
+    edges { node { id status channelId channelService dueAt sentAt
+                   error { message } } } } }
+"""
+
+
+def _recent_posts(token, org_id, limit=60):
+    return [e["node"] for e in gql(_POSTS_Q % (limit, org_id), token)["posts"]["edges"]]
+
+
+def publish_failures(nodes):
+    """{channel_id: [(dueAt, message), ...]} for posts Buffer could not publish."""
+    out = {}
+    for n in nodes:
+        if n.get("status") != "error":
+            continue
+        msg = (n.get("error") or {}).get("message") or "(no message)"
+        out.setdefault(n["channelId"], []).append((n.get("dueAt"), msg))
+    return out
+
+
+def still_queued(nodes):
+    """{channel_id: count} - what a broken channel burns through, one failure
+    at a time, until it is reconnected."""
+    out = {}
+    for n in nodes:
+        if n.get("status") in ("scheduled", "sending"):
+            out[n["channelId"]] = out.get(n["channelId"], 0) + 1
+    return out
 
 
 if __name__ == "__main__":
