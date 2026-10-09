@@ -61,11 +61,14 @@ most in practice:
 Instagram `hook` and `quote` text is rendered onto the card image, so keep any rewrite the
 same length or shorter.
 
-Check before committing:
+Check before committing (the second command is the same gate the weekly run
+applies to generated posts; the curated library must pass it clean):
 
 ```bash
 python -c "import json,re;print(sum(len(re.findall(r'[—–]| - ',json.dumps(json.load(open(f,encoding='utf-8'))))) for f in ['content/instagram.json','content/linkedin.json']))"
 # must print 0
+python quality.py --library
+# must report 0 issues
 ```
 
 ---

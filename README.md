@@ -37,6 +37,8 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |
 | `generate.py` / `brand.py` | The image renderer + brand system |
+| `llm_content.py` | Weekly post generation (Claude) when `config.json` mode is `generate` |
+| `quality.py` / `content/slop.json` | Quality gate every generated post must pass before it is queued |
 | `buffer_client.py` | Buffer GraphQL API client |
 | `run.py` | Orchestrator (`build` / `post`) |
 | `assets/fonts`, `assets/covers` | Bundled fonts + book covers |
@@ -77,6 +79,26 @@ per-channel posting schedule, not here.
 
 **Change the schedule of publishing** — in Buffer (Channel settings → Posting
 Schedule). This repo only controls *what* gets queued; Buffer controls *when*.
+
+## Quality gate (generated posts)
+
+In `generate` mode every draft is checked by `quality.py` before it goes near
+Buffer: stock AI vocabulary and phrases (`content/slop.json`), the sentence
+shapes models default to ("it's not X, it's Y", emoji, hashtag walls),
+invisible or non-keyboard characters, and a LinkedIn first line that fits the
+mobile "...more" cut (140 characters). A draft that trips it goes back to the
+model with the reasons, up to three times. If it still fails, the run posts
+from the curated library that week instead and says so in the log. The gate is
+calibrated so Paul's own library passes clean; keep it that way when adding
+words:
+
+```bash
+python quality.py --library     # must report 0 issues
+echo "draft text" | python quality.py - --linkedin
+```
+
+Generated LinkedIn posts open with a hook on its own line: a plain, specific
+claim under 120 characters, because that line is all a phone shows.
 
 ## Notes & limits
 

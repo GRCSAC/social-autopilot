@@ -55,8 +55,15 @@ def _gather(stamp):
 
     if CONFIG.get("mode") == "generate":
         import llm_content
-        ig_items, li_items = llm_content.generate(n_ig, n_li, stamp)
-        return ig_items, li_items, dict(state)  # generated content does not rotate
+        import quality
+        try:
+            ig_items, li_items = llm_content.generate(n_ig, n_li, stamp)
+            return ig_items, li_items, dict(state)  # generated content does not rotate
+        except quality.QualityError as e:
+            # Better a repeat from the curated library than slop under Paul's
+            # name. Fall through to rotation for this run and say so loudly.
+            print(f"WARNING: {e}")
+            print("WARNING: falling back to the curated library for this run.")
 
     next_state = dict(state)
     ig, li = _load("instagram"), _load("linkedin")

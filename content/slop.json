@@ -1,0 +1,47 @@
+{
+  "_about": "Words, phrases and shapes that read as machine-written. quality.py rejects any generated post that uses one, and llm_content.py tells the model not to. Calibrated against the curated library: every item in content/linkedin.json and content/instagram.json passes clean. Keep it that way when adding entries (python quality.py --library must report 0 issues).",
+  "words": [
+    "delve", "delves", "delving", "deep dive", "dive deep",
+    "leverage", "leverages", "leveraging", "utilize", "utilizing",
+    "harness", "harnessing", "embark", "foster", "fostering", "facilitate",
+    "showcase", "showcases", "unlock", "unlocks", "elevate", "elevates",
+    "streamline", "spearhead", "underscore", "underscores", "cultivate",
+    "amplify", "curate", "empower", "empowering", "revolutionize",
+    "transformative", "robust", "seamless", "seamlessly", "pivotal", "crucial",
+    "comprehensive", "cutting-edge", "game-changing", "game-changer", "game changer",
+    "groundbreaking", "unparalleled", "invaluable", "meticulous", "meticulously",
+    "myriad", "multifaceted", "holistic", "bespoke", "innovative", "profound",
+    "tapestry", "realm", "testament", "cornerstone", "beacon", "paradigm",
+    "synergy", "ecosystem", "treasure trove", "plethora", "arsenal", "north star",
+    "moreover", "furthermore", "additionally", "nevertheless", "consequently",
+    "notably", "importantly", "in essence", "in conclusion", "it is worth noting",
+    "navigate", "navigating", "landscape", "journey", "mindset shift",
+    "superpower", "unpack", "authentic self", "thought leader", "value-add",
+    "actionable", "impactful", "synergize", "double down", "level up",
+    "next level", "circle back", "low-hanging fruit", "best-in-class",
+    "world-class", "top-tier", "rockstar", "ninja", "crush it", "crushing it"
+  ],
+  "phrases": [
+    "in today's fast-paced world", "in today's digital age", "in today's world",
+    "ever-evolving", "ever-changing", "let's face it", "here's the thing",
+    "picture this", "imagine a world", "it's no secret", "we've all been there",
+    "let that sink in", "the choice is yours", "food for thought",
+    "what are your thoughts", "drop a comment", "at the end of the day",
+    "move the needle", "needle-moving", "had the opportunity to",
+    "excited to announce", "thrilled to share", "humbled to", "honored to announce",
+    "without further ado", "buckle up", "the harsh truth", "spoiler alert",
+    "read that again", "save this for later", "who's with me", "agree?",
+    "thoughts?", "am I wrong?", "hot take", "unpopular opinion", "game on",
+    "real talk", "plot twist", "hard truth", "the bottom line"
+  ],
+  "shapes": [
+    {"id": "not-just-its",   "regex": "(?i)\\b(?:it'?s|this is|that'?s) not (?:just|only|merely) [^.!?\\n]{2,70}[,.;] (?:it'?s|this is|that'?s)\\b"},
+    {"id": "not-only-but",   "regex": "(?i)\\bnot only\\b[^.!?\\n]{2,80}\\bbut (?:also )?"},
+    {"id": "isnt-about",     "regex": "(?i)\\b(?:this|it|leadership|management) (?:isn'?t|is not) about [^.!?\\n]{2,70}[,.;] (?:it'?s|it is) about\\b"},
+    {"id": "one-word-tease", "regex": "(?m)^\\s*(?:the result|the best part|the kicker|the catch|the lesson|the truth)\\??\\s*$"},
+    {"id": "emoji",          "regex": "[\\U0001F300-\\U0001FAFF\\u2600-\\u27BF\\u2B50\\u2705]"},
+    {"id": "hashtag-wall",   "regex": "(?:#\\w+[ \\t]*){7,}"},
+    {"id": "as-an-ai",       "regex": "(?i)\\bas an ai\\b|\\bas a language model\\b"},
+    {"id": "in-summary",     "regex": "(?im)^\\s*(?:in summary|to summarize|in conclusion)\\b"}
+  ]
+}
