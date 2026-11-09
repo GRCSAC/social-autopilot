@@ -1,0 +1,82 @@
+[
+  {
+    "id": "itz-ig-01-colour",
+    "type": "quote",
+    "eyebrow": "Heart rate zones",
+    "quote": "Green is easy. Orange means you are not doing the workout you planned.",
+    "attribution": "In The Zone",
+    "caption": "On a treadmill you cannot read a number at a jog. You can read a colour from across the gym. In The Zone turns your iPhone screen into your zone, edge to edge. iPhone and Apple Watch, or a chest strap on its own. $1.99 once, no subscription. Link in bio.\n\n#Zone2 #HeartRateTraining #Treadmill #AppleWatch #Running"
+  },
+  {
+    "id": "itz-ig-02-drift",
+    "type": "quote",
+    "eyebrow": "The common mistake",
+    "quote": "Most people drift out of Zone 2 without noticing.",
+    "attribution": "In The Zone",
+    "caption": "Heart rate lags effort by twenty to sixty seconds, so a number teaches you to chase it. A colour you can see without looking down, and a trend you can act on early, fix the drift. Why Zone 2 matters is on the site. Link in bio.\n\n#Zone2 #EasyRunning #Running #EnduranceTraining"
+  },
+  {
+    "id": "itz-ig-03-talk-test",
+    "type": "quote",
+    "eyebrow": "Zone 2",
+    "quote": "If you can hold an unhurried conversation, you are in Zone 2.",
+    "attribution": "In The Zone",
+    "caption": "The test that beats any chart. If your sentences start breaking up, you have drifted above it. Heart rate is the precise version of the same signal, and the app shows it as a colour. Link in bio.\n\n#Zone2 #TalkTest #Running #HeartRate"
+  },
+  {
+    "id": "itz-ig-04-price",
+    "type": "quote",
+    "eyebrow": "One payment",
+    "quote": "$1.99. Once. There is no subscription and there will not be one.",
+    "attribution": "In The Zone",
+    "caption": "No tier, no trial, no upsell. There is no server behind the app, so nothing costs every month and nothing is charged every month. Training load, route replays, training plans, all in the price. Link in bio.\n\n#NoSubscription #IndieApps #AppleWatch #Fitness"
+  },
+  {
+    "id": "itz-ig-05-privacy",
+    "type": "quote",
+    "eyebrow": "Your data",
+    "quote": "There is no account because there is no server.",
+    "attribution": "In The Zone",
+    "caption": "Your heart rate, workouts and routes stay on your phone and in Apple Health. No analytics, no third-party code. The App Store label says Data Not Linked to You. Link in bio.\n\n#Privacy #HealthData #AppleWatch #IndieApps"
+  },
+  {
+    "id": "itz-ig-06-taps",
+    "type": "quote",
+    "eyebrow": "Apple Watch",
+    "quote": "One tap means too hard. A different tap means ease off.",
+    "attribution": "In The Zone",
+    "caption": "Set a zone to hold and the watch tells you which way to move. Two signals, two directions, no looking. Outdoors it can speak the zones through your AirPods instead. Link in bio.\n\n#AppleWatch #Zone2 #Running #WearableTech"
+  },
+  {
+    "id": "itz-ig-07-tanaka",
+    "type": "quote",
+    "eyebrow": "Your maximum",
+    "quote": "220 minus your age is probably wrong for you.",
+    "attribution": "In The Zone",
+    "caption": "The old formula increasingly misses past forty. Tanaka, 208 minus 0.7 times age, comes from 18,712 subjects and holds up better. A measured maximum beats both. Work out your five zones free on the site. Link in bio.\n\n#HeartRateZones #Zone2 #Running #Training"
+  },
+  {
+    "id": "itz-ig-08-strap",
+    "type": "quote",
+    "eyebrow": "No Apple Watch?",
+    "quote": "A chest strap and an iPhone are enough.",
+    "attribution": "In The Zone",
+    "caption": "Any Bluetooth chest strap on the standard profile works. Pair it once and the phone runs the whole workout, with spoken cues even when the screen is locked, saved to Apple Health. Which strap to buy is on the site. Link in bio.\n\n#ChestStrap #HeartRateMonitor #Running #Cycling"
+  },
+  {
+    "id": "itz-ig-09-indoor",
+    "type": "quote",
+    "eyebrow": "Indoors",
+    "quote": "A rower produces heart rate too. It deserves the same analysis as a run.",
+    "attribution": "In The Zone",
+    "caption": "Treadmill, elliptical, bike, rower, a yoga class or a strength session. The same zones, training load and history as an outdoor run. Effort you cannot measure by pace finally shows up. Link in bio.\n\n#Treadmill #Rowing #IndoorCycling #HeartRateTraining"
+  },
+  {
+    "id": "itz-ig-10-load",
+    "type": "quote",
+    "eyebrow": "Training load",
+    "quote": "Twenty minutes at threshold costs five times twenty easy ones.",
+    "attribution": "In The Zone",
+    "caption": "Training load weighs your time by intensity and compares this week with your recent average. It stays quiet until there is enough history to mean something. Link in bio.\n\n#TrainingLoad #Running #Recovery #AppleWatch"
+  }
+]

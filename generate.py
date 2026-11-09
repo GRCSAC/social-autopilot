@@ -159,6 +159,64 @@ def render_wide_feature(spec, out_path):
     return out_path
 
 
+# --- In The Zone cards -------------------------------------------------------
+# The app's five zone colours on its near-black ground. Quote in the label face
+# (the app and its site use a plain sans), eyebrow in a zone colour, a five-band
+# zone strip along the bottom so every card is recognisably the app's.
+ZONE_BG = (16, 18, 22)
+ZONE_INK = (242, 243, 245)
+ZONE_MUTE = (162, 168, 180)
+ZONES = [(89, 168, 240), (76, 199, 154), (242, 196, 64), (245, 140, 51), (237, 74, 79)]
+
+
+def _zone_strip(d, w, y, h):
+    seg = w / len(ZONES)
+    for i, col in enumerate(ZONES):
+        d.rectangle([int(i * seg), y, int((i + 1) * seg), y + h], fill=col)
+
+
+def render_zone(spec, out_path):
+    """1080x1080 Instagram card for In The Zone."""
+    img = Image.new("RGB", (S, S), ZONE_BG)
+    d = ImageDraw.Draw(img)
+    accent = ZONES[int(spec.get("zone", 2)) - 1]
+    cx = S // 2
+    eyebrow = spec.get("eyebrow", "").upper()
+    ef = B.label(30)
+    d.text((cx - B.text_w(d, eyebrow, ef) / 2, 140), eyebrow, font=ef, fill=accent)
+    d.rectangle([cx - 40, 196, cx + 40, 201], fill=accent)
+    qf, lines, lh = B.fit_wrapped(d, spec["quote"], B.label, max_w=S - 200, max_h=520, hi=84, lo=40, line_ratio=1.12)
+    top = 250 + (520 - len(lines) * lh) // 2
+    B.draw_center_block(d, lines, qf, lh, cx, top, ZONE_INK)
+    attrib = spec.get("attribution", "In The Zone").upper()
+    af = B.label(28)
+    d.text((cx - B.text_w(d, attrib, af) / 2, 860), attrib, font=af, fill=ZONE_MUTE)
+    _zone_strip(d, S, S - 28, 28)
+    img.save(out_path, "JPEG", quality=90)
+    return out_path
+
+
+def render_zone_wide(spec, out_path):
+    """1200x627 LinkedIn card for In The Zone (used only when an item carries a card)."""
+    img = Image.new("RGB", (W_W, W_H), ZONE_BG)
+    d = ImageDraw.Draw(img)
+    accent = ZONES[int(spec.get("zone", 2)) - 1]
+    cx = W_W // 2
+    eyebrow = spec.get("eyebrow", "").upper()
+    ef = B.label(22)
+    d.text((cx - B.text_w(d, eyebrow, ef) / 2, 70), eyebrow, font=ef, fill=accent)
+    d.rectangle([cx - 36, 112, cx + 36, 116], fill=accent)
+    qf, lines, lh = B.fit_wrapped(d, spec["quote"], B.label, max_w=W_W - 200, max_h=330, hi=58, lo=30, line_ratio=1.12)
+    top = 150 + (330 - len(lines) * lh) // 2
+    B.draw_center_block(d, lines, qf, lh, cx, top, ZONE_INK)
+    attrib = spec.get("attribution", "In The Zone").upper()
+    af = B.label(22)
+    d.text((cx - B.text_w(d, attrib, af) / 2, 528), attrib, font=af, fill=ZONE_MUTE)
+    _zone_strip(d, W_W, W_H - 20, 20)
+    img.save(out_path, "JPEG", quality=90)
+    return out_path
+
+
 def render_wide(spec, out_path):
     if spec.get("type", "quote") == "feature":
         return render_wide_feature(spec, out_path)

@@ -136,6 +136,31 @@ def build():
             })
         next_state["netvane_linkedin"] = (start + n_nv) % len(nv)
 
+    # In The Zone: a curated stream for the heart-rate zone training app, on its
+    # own cursors, text-only on LinkedIn and a zone-coloured card on Instagram.
+    # Both default to 0 posts per run in config.json until Paul switches them on.
+    for stream, platform in (("inthezone_linkedin", "linkedin"), ("inthezone_instagram", "instagram")):
+        n = CONFIG["posts_per_run"].get(stream, 0)
+        channel = CONFIG["channels"].get(stream)
+        if not (n and channel):
+            continue
+        bank = _load(stream)
+        start = next_state.get(stream, 0)
+        for it in _take(bank, start, n):
+            img_url = None
+            if platform == "instagram":
+                fname = f"{it['id']}-{stamp}.jpg"
+                generate.render_zone(it, CARDS / fname)
+                img_url = f"{base}/cards/{fname}" if base else None
+            items.append({
+                "platform": platform,
+                "channel_id": channel,
+                "text": it["caption"] if platform == "instagram" else it["text"],
+                "image_url": img_url,
+                "label": it["id"],
+            })
+        next_state[stream] = (start + n) % len(bank)
+
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
     print(f"Built batch ({CONFIG.get('mode', 'library')}): {len(items)} posts "
           f"({CONFIG['posts_per_run']['instagram']} IG + {CONFIG['posts_per_run']['linkedin']} LI "

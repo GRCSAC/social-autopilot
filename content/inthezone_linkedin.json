@@ -1,0 +1,42 @@
+[
+  {
+    "id": "itz-li-01-read-by-colour",
+    "text": "A heart rate is a number. On a treadmill you cannot read a number at a jog, so you stop reading it.\n\nI built In The Zone around a different idea: make the whole phone screen the colour of the zone you are in. Green is easy. Yellow is tempo. Orange means back off. You read it from the corner of your eye without breaking stride.\n\nIt runs on iPhone and Apple Watch, or on an iPhone with a Bluetooth chest strap and no watch at all. $1.99 once, no subscription.\n\nhttps://inthezone.grcsac.com\n\n#Zone2 #HeartRateTraining #AppleWatch #Running #Treadmill"
+  },
+  {
+    "id": "itz-li-02-drift",
+    "text": "Most people drift out of Zone 2 without noticing. It is the single most common mistake in easy training.\n\nThe reason is physical. Heart rate lags effort by twenty to sixty seconds, so a bare number teaches you to chase it: push, overshoot, back off, undershoot.\n\nTwo things help. A signal you can see without looking down, and the trend rather than the value. In The Zone does both: the screen is the zone, and an optional paper plane shows where you are heading before you get there.\n\nWhat Zone 2 is and why it matters: https://inthezone.grcsac.com/zone-2-training\n\n#Zone2 #EnduranceTraining #Running #Cycling"
+  },
+  {
+    "id": "itz-li-03-price",
+    "text": "In The Zone costs $1.99, once. People ask whether that changes later. It does not.\n\nThere is no server behind the app, so nothing costs me money every month, and so nothing needs to cost you money every month. Training load, route replays, six training plans, achievements, all of it is in the price.\n\nIt is a product decision, not a launch offer.\n\nhttps://apps.apple.com/app/id6792685206\n\n#IndieApps #NoSubscription #AppleWatch #Fitness"
+  },
+  {
+    "id": "itz-li-04-privacy",
+    "text": "The fitness app I built has no account. Not because I forgot, but because there is nothing for an account to do.\n\nYour heart rate, workouts and routes stay on your phone and in Apple Health. No analytics, no third-party code. The App Store privacy label reads Data Not Linked to You, and it reads that way because nothing is collected to link.\n\nThe one exception is a single number, your weekly minutes, and only if you choose to join the leaderboard.\n\nhttps://inthezone.grcsac.com/privacy\n\n#Privacy #HealthData #AppleWatch #IndieApps"
+  },
+  {
+    "id": "itz-li-05-tanaka",
+    "text": "220 minus your age is probably the wrong maximum heart rate for you, and every zone boundary moves with it.\n\nThe formula dates from the 1970s and increasingly underestimates past forty. The Tanaka formula, 208 minus 0.7 times age, comes from a 2001 meta-analysis of 18,712 subjects and holds up better across the range. At fifty the difference is three beats.\n\nIf you have ever measured your real maximum, use that instead. A real figure always wins.\n\nThere is a free calculator on the site that shows both methods, and Karvonen as well: https://inthezone.grcsac.com/zone-calculator\n\n#HeartRateZones #Zone2 #Running #TrainingScience"
+  },
+  {
+    "id": "itz-li-06-taps",
+    "text": "Set a zone to hold and your Apple Watch tells you which way to move without a glance.\n\nOne tap pattern when you drift above the zone. A different one when you ease off below it. Two signals, two directions. Outdoors it can speak the zone changes through your AirPods instead, and the music ducks rather than stops.\n\nThat is In The Zone for Apple Watch. $1.99 once.\n\nhttps://inthezone.grcsac.com/apple-watch-heart-rate-zones\n\n#AppleWatch #Running #Zone2 #WearableTech"
+  },
+  {
+    "id": "itz-li-07-strap",
+    "text": "You do not need an Apple Watch to train by heart rate zone on an iPhone.\n\nAny Bluetooth chest strap on the standard heart rate profile works with In The Zone. Polar, Garmin, Wahoo, Coospo. Pair it once and the phone runs the whole workout: live zones on screen, spoken cues even with the screen locked, and a full session saved to Apple Health with your history and training load.\n\nStraps measure electrically, which is why they hold up during intervals where a wrist sensor can lag.\n\nWhich strap: https://inthezone.grcsac.com/best-chest-strap-apple-watch\n\n#ChestStrap #HeartRateMonitor #Running #Cycling"
+  },
+  {
+    "id": "itz-li-08-indoor",
+    "text": "Indoor sessions deserve the same analysis as a run, and in most apps they do not get it.\n\nTreadmill, elliptical, bike and rower all produce heart rate, and heart rate is the effort signal. In The Zone gives an indoor session the same zones, training load and history as an outdoor run. A yoga class or a strength session can be tracked the same way. Effort you cannot measure by pace or distance finally shows up.\n\nhttps://inthezone.grcsac.com/treadmill-heart-rate-training\n\n#Treadmill #IndoorCycling #Rowing #HeartRateTraining"
+  },
+  {
+    "id": "itz-li-09-load",
+    "text": "Is this week too much? A total of minutes cannot tell you. Training load can.\n\nIn The Zone weighs your time in each zone by intensity, so twenty minutes at threshold costs about five times twenty easy minutes, and compares this week against your recent average. It stays quiet until there is enough history for the comparison to mean something. A verdict from three days would be noise dressed as insight.\n\nhttps://inthezone.grcsac.com\n\n#TrainingLoad #Running #EnduranceTraining #AppleWatch"
+  },
+  {
+    "id": "itz-li-10-blog",
+    "text": "Almost nothing on the In The Zone blog is about the app.\n\nThree times a week I write about starting again after years away, about running when you do not feel like it, about rest without guilt. The app helps you hold a zone. Showing up is the harder part, and it deserves its own words.\n\nhttps://inthezone.grcsac.com/blog/\n\n#Running #Consistency #Motivation #Coaching"
+  }
+]
