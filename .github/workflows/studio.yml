@@ -1,9 +1,9 @@
 name: Studio Instagram
 
 # PARKED. The studio Instagram is scheduled natively in Meta Business Suite (see
-# STUDIO-SCHEDULING.md), because Meta's API needs a developer account and that
-# needs a Facebook account. This workflow is the direct-API route, kept for the day
-# a token exists: it has no schedule and only runs by hand from the Actions tab.
+# STUDIO-SCHEDULING.md). This workflow is the direct-API route. The Meta app behind
+# it exists since 2026-11-17; until its token is checked and the Business Suite
+# queue has run out, it has no schedule and only runs by hand from the Actions tab.
 
 on:
   workflow_dispatch:
@@ -31,6 +31,7 @@ jobs:
       PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
       IG_STUDIO_TOKEN: ${{ secrets.IG_STUDIO_TOKEN }}
       IG_STUDIO_TOKEN_KEY: ${{ secrets.IG_STUDIO_TOKEN_KEY }}
+      IG_STUDIO_USER_ID: ${{ vars.IG_STUDIO_USER_ID }}
       DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || '' }}
     steps:
       - uses: actions/checkout@v4

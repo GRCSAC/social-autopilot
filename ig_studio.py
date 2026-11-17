@@ -1,23 +1,35 @@
 """GRCSAC Studio -> Instagram, directly through Meta's Instagram API.
 
 No Buffer. The studio Instagram account (a professional account) is published to
-straight from GitHub Actions with the Instagram API with Instagram Login:
-create a media container from a public image URL, then publish it. Images are the
-same jsDelivr-served cards the rest of this repo uses.
+straight from GitHub Actions: create a media container from a public image URL,
+then publish it. Images are the same jsDelivr-served cards the rest of this repo
+uses.
+
+Two kinds of token work, and the script finds out which one it was given:
+
+  instagram   "Instagram API with Instagram Login" (graph.instagram.com). A 60-day
+              token that is refreshed on every run. Meta no longer offers this
+              setup to new apps.
+  facebook    "API setup with Unified login" (graph.facebook.com). A system-user
+              token that does not expire, so nothing is refreshed or stored. This
+              is what the GRCSAC Studio Autopilot app issues. It needs the
+              account's Instagram ID in IG_STUDIO_USER_ID.
 
   python ig_studio.py check     # who the token belongs to, when it expires
   python ig_studio.py build     # render the next card(s) into public/cards + _studio_batch.json
   python ig_studio.py publish   # wait for the image URL, publish, advance the cursor
 
 Environment:
-  IG_STUDIO_TOKEN       bootstrap long-lived token (GitHub secret), used only until the
-                        encrypted store below exists
+  IG_STUDIO_TOKEN       the token (GitHub secret). For an instagram token it is only the
+                        bootstrap, used until the encrypted store below exists
+  IG_STUDIO_USER_ID     the Instagram account ID (GitHub variable); needed for a
+                        facebook token, ignored for an instagram one
   IG_STUDIO_TOKEN_KEY   Fernet key (GitHub secret) for content/ig_studio_token.enc
   PUBLIC_BASE_URL       where public/ is served from (jsDelivr)
   DRY_RUN=1             render + print, no API calls, no state change
-  IG_API_VERSION        default v22.0
+  IG_API_VERSION        default v27.0
 
-Token life: Meta long-lived tokens last 60 days and can be refreshed once they are
+Token life (instagram tokens only): Meta long-lived tokens last 60 days and can be refreshed once they are
 at least a day old. Every run refreshes and writes the new token back to the
 encrypted store, which is committed, so the token never ages out while the
 schedule keeps running. If the schedule stops for 60+ days, generate a new token
@@ -42,17 +54,18 @@ CARDS = ROOT / "public" / "cards"
 BATCH = ROOT / "_studio_batch.json"
 TOKEN_FILE = ROOT / "content" / "ig_studio_token.enc"
 
-API = "https://graph.instagram.com"
-VERSION = os.environ.get("IG_API_VERSION", "v22.0")
+API_IG = "https://graph.instagram.com"
+API_FB = "https://graph.facebook.com"
+VERSION = os.environ.get("IG_API_VERSION", "v27.0")
 CURSOR = "studio_instagram"
 
 
 # ------------------------------------------------------------------ http
-def _call(method, path, params=None, token=None):
+def _call(method, path, params=None, token=None, api=API_IG):
     params = dict(params or {})
     if token:
         params["access_token"] = token
-    url = f"{API}/{VERSION}/{path.lstrip('/')}" if not path.startswith("http") else path
+    url = f"{api}/{VERSION}/{path.lstrip('/')}" if not path.startswith("http") else path
     data = None
     if method == "GET":
         url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
@@ -73,7 +86,8 @@ def _call(method, path, params=None, token=None):
 
 
 def _redact(s):
-    return s[:6] + "..." + s[-4:] if s and len(s) > 14 else "***"
+    """Never print any part of the token: this repo's Actions logs are public."""
+    return f"({len(s)} characters)" if s else "(empty)"
 
 
 # ------------------------------------------------------------------ token store
@@ -121,7 +135,7 @@ def refresh_token(rec):
         print(f"  token refreshed {age.seconds // 3600}h ago; not due")
         return rec
     try:
-        res = _call("GET", f"{API}/refresh_access_token",
+        res = _call("GET", f"{API_IG}/refresh_access_token",
                     {"grant_type": "ig_refresh_token", "access_token": rec["token"]})
     except RuntimeError as e:
         left = datetime.fromisoformat(rec["expires_at"]) - now
@@ -139,13 +153,51 @@ def refresh_token(rec):
 
 
 # ------------------------------------------------------------------ commands
+def resolve(token):
+    """Find out which API the token belongs to and which account it posts as.
+    Returns {kind, api, id, username}."""
+    try:
+        me = _call("GET", "me", {"fields": "id,username,account_type"}, token, API_IG)
+        return {"kind": "instagram", "api": API_IG, "id": me["id"],
+                "username": me.get("username"), "type": me.get("account_type")}
+    except RuntimeError as e:
+        ig_err = e
+    uid = os.environ.get("IG_STUDIO_USER_ID", "").strip()
+    if not uid:
+        raise RuntimeError(f"not an Instagram-login token ({ig_err}) and IG_STUDIO_USER_ID "
+                           "is not set, so the Facebook-login API cannot be tried")
+    try:
+        me = _call("GET", uid, {"fields": "id,username"}, token, API_FB)
+    except RuntimeError as fb_err:
+        raise RuntimeError(f"token rejected by both APIs. graph.instagram.com: {ig_err}. "
+                           f"graph.facebook.com: {fb_err}")
+    return {"kind": "facebook", "api": API_FB, "id": me["id"],
+            "username": me.get("username"), "type": "system-user token"}
+
+
+def _expiry(token):
+    """Best effort: when a facebook token expires, from Meta's own inspector."""
+    try:
+        d = _call("GET", "debug_token", {"input_token": token}, token, API_FB)["data"]
+    except (RuntimeError, KeyError):
+        return "expiry unknown"
+    exp = d.get("expires_at", 0)
+    scopes = ", ".join(d.get("scopes", []))
+    when = "never expires" if not exp else         "expires " + datetime.fromtimestamp(exp, timezone.utc).strftime("%Y-%m-%d")
+    return f"{when}; scopes: {scopes}"
+
+
 def check():
     rec = load_token()
-    print(f"token: {_redact(rec['token'])} from {rec['source']}, expires {rec['expires_at'][:10]}")
-    me = _call("GET", "me", {"fields": "id,username,account_type"}, rec["token"])
-    print(f"account: @{me.get('username')} (id {me.get('id')}, {me.get('account_type')})")
-    rec = refresh_token(rec)
-    return me
+    acct = resolve(rec["token"])
+    print(f"token: {_redact(rec['token'])} from {rec['source']}, {acct['kind']} API")
+    print(f"account: @{acct['username']} (id {acct['id']}, {acct['type']})")
+    if acct["kind"] == "instagram":
+        print(f"  expires {rec['expires_at'][:10]}")
+        refresh_token(rec)
+    else:
+        print(f"  {_expiry(rec['token'])}; nothing to refresh")
+    return acct
 
 
 def _load_lib():
@@ -191,11 +243,12 @@ def _wait_live(url, tries=12, delay=20):
     return False
 
 
-def _publish_one(ig_id, token, image_url, caption):
-    res = _call("POST", f"{ig_id}/media", {"image_url": image_url, "caption": caption}, token)
+def _publish_one(acct, token, image_url, caption):
+    api, ig_id = acct["api"], acct["id"]
+    res = _call("POST", f"{ig_id}/media", {"image_url": image_url, "caption": caption}, token, api)
     cid = res["id"]
     for _ in range(12):
-        st = _call("GET", cid, {"fields": "status_code,status"}, token)
+        st = _call("GET", cid, {"fields": "status_code,status"}, token, api)
         code = st.get("status_code")
         if code == "FINISHED":
             break
@@ -204,10 +257,10 @@ def _publish_one(ig_id, token, image_url, caption):
         time.sleep(5)
     else:
         raise RuntimeError(f"container {cid} never finished (last: {st})")
-    pub = _call("POST", f"{ig_id}/media_publish", {"creation_id": cid}, token)
+    pub = _call("POST", f"{ig_id}/media_publish", {"creation_id": cid}, token, api)
     mid = pub["id"]
     try:
-        link = _call("GET", mid, {"fields": "permalink"}, token).get("permalink", "")
+        link = _call("GET", mid, {"fields": "permalink"}, token, api).get("permalink", "")
     except RuntimeError:
         link = ""
     return mid, link
@@ -223,10 +276,10 @@ def publish():
         print("Dry run: nothing published, state not advanced.")
         return
     rec = load_token()
-    rec = refresh_token(rec)
-    me = _call("GET", "me", {"fields": "id,username"}, rec["token"])
-    ig_id = me["id"]
-    print(f"publishing as @{me.get('username')}")
+    acct = resolve(rec["token"])
+    if acct["kind"] == "instagram":
+        rec = refresh_token(rec)
+    print(f"publishing as @{acct['username']} ({acct['kind']} API)")
     failures = 0
     for it in batch["items"]:
         if not it["image_url"]:
@@ -238,7 +291,7 @@ def publish():
             failures += 1
             continue
         try:
-            mid, link = _publish_one(ig_id, rec["token"], it["image_url"], it["caption"])
+            mid, link = _publish_one(acct, rec["token"], it["image_url"], it["caption"])
             print(f"  published {it['label']} -> {mid} {link}")
         except Exception as e:
             print(f"  FAIL {it['label']}: {e}")

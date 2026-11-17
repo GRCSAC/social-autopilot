@@ -84,18 +84,38 @@ What exists on Meta's side, so nobody repeats it:
   Invites. After that the account appears under "Generate access tokens" with a
   **Generate token** link.
 
+- A login configuration, **Instagram API (Unified Login)**, created from Meta's
+  template under "1. Configure your app" and selected. Without it, Generate token
+  answers "Select a configuration in Step 1 before generating an access token."
+- The repository variable `IG_STUDIO_USER_ID`, holding the account's Instagram ID.
+
 Meta now calls this "API setup with Unified login" and says the older "API setup
-with Instagram login" is not available for newer apps. `ig_studio.py` was written
-against the Instagram-login API (`graph.instagram.com`, 60-day token with refresh).
-Whether the token this app issues works with it unchanged is **not verified** until
-the first `check_only` run.
+with Instagram login" is not available for newer apps. The difference matters:
+
+| | Instagram login (old) | Unified login (this app) |
+|---|---|---|
+| Host | `graph.instagram.com` | `graph.facebook.com` |
+| Token | 60 days, refreshed every run | system-user token, does not expire |
+| Permissions | `instagram_business_*` | `instagram_basic`, `instagram_content_publish` (the template also asks for comments, messages and ads) |
+| Account | found from the token (`/me`) | named by `IG_STUDIO_USER_ID` |
+
+`ig_studio.py` handles both and works out which token it was given. The
+Unified-login path has been tested only as far as Meta rejecting a made-up token;
+it is **not verified** against a real one until the first `check_only` run.
+
+**Generate token** opens a Facebook approval window (`facebook.com/.../dialog/oauth`)
+in a new browser window. That window is the account owner's to complete: browser
+automation cannot see it, and it may ask for the Facebook password.
 
 To switch on:
 
-1. Generate the token in the Meta app and store it as the GitHub secret
-   `IG_STUDIO_TOKEN` (never in the repo, never in chat).
-2. Actions -> studio -> Run workflow with `check_only`. Fix `ig_studio.py` if the
-   check fails, then run once with `dry_run`.
+1. On the app's "API setup with Unified login" tab, click **Generate token** next
+   to grcsac_studio, approve in the Facebook window, and store the token as the
+   GitHub secret `IG_STUDIO_TOKEN` (never in the repo, never in chat). The token
+   does not expire, so treat it like a password.
+2. Actions -> Studio Instagram -> Run workflow with `check_only`. It prints the
+   account, the token's permissions and its expiry, and never any part of the
+   token. Fix `ig_studio.py` if the check fails, then run once with `dry_run`.
 3. Let the posts already scheduled in Business Suite run out, then put the cron
    back in `studio.yml` and stop the Business Suite top-ups. Never run both for the
    same dates: the ledger in `content/studio_schedule.json` is the single cursor.
