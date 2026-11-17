@@ -381,11 +381,17 @@ def _container(acct, token, image_urls, video_url, caption):
         cid = _call("POST", f"{ig_id}/media", {"image_url": image_urls[0], "caption": caption}, token, api)["id"]
         return _wait_done(acct, token, cid, 12)
     kids = []
-    for u in image_urls:
-        kid = _call("POST", f"{ig_id}/media", {"image_url": u, "is_carousel_item": "true"}, token, api)["id"]
-        kids.append(_wait_done(acct, token, kid, 12))
-    cid = _call("POST", f"{ig_id}/media", {"media_type": "CAROUSEL", "children": ",".join(kids),
-                                           "caption": caption}, token, api)["id"]
+    for n, u in enumerate(image_urls, 1):
+        try:
+            kid = _call("POST", f"{ig_id}/media", {"image_url": u, "is_carousel_item": "true"}, token, api)["id"]
+            kids.append(_wait_done(acct, token, kid, 12))
+        except RuntimeError as e:
+            raise RuntimeError(f"slide {n} of {len(image_urls)}: {e}")
+    try:
+        cid = _call("POST", f"{ig_id}/media", {"media_type": "CAROUSEL", "children": ",".join(kids),
+                                               "caption": caption}, token, api)["id"]
+    except RuntimeError as e:
+        raise RuntimeError(f"carousel of {len(kids)} accepted slides: {e}")
     return _wait_done(acct, token, cid, 12)
 
 
