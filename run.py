@@ -136,10 +136,33 @@ def build():
             })
         next_state["netvane_linkedin"] = (start + n_nv) % len(nv)
 
+    # GRCSAC Studio: a curated, human-written Instagram stream about the apps
+    # and public repos on grcsac.com, posted to the studio's own Instagram
+    # channel. Never LLM-generated (every line is a checked product fact), on
+    # its own cursor in state.json. Skipped entirely until config.json names
+    # the channel, so it is safe to ship ahead of the Buffer connection.
+    n_st = CONFIG["posts_per_run"].get("studio_instagram", 0)
+    st_channel = CONFIG["channels"].get("studio_instagram")
+    if n_st and st_channel:
+        import studio
+        lib = _load("studio_instagram")
+        start = next_state.get("studio_instagram", 0)
+        for it in _take(lib, start, n_st):
+            fname = f"{it['id']}-{stamp}.jpg"
+            studio.render(it, CARDS / fname)
+            items.append({
+                "platform": "instagram",
+                "channel_id": st_channel,
+                "text": it["caption"],
+                "image_url": f"{base}/cards/{fname}" if base else None,
+                "label": it["id"],
+            })
+        next_state["studio_instagram"] = (start + n_st) % len(lib)
+
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
     print(f"Built batch ({CONFIG.get('mode', 'library')}): {len(items)} posts "
           f"({CONFIG['posts_per_run']['instagram']} IG + {CONFIG['posts_per_run']['linkedin']} LI "
-          f"+ {n_nv} NetVane)")
+          f"+ {n_nv} NetVane + {n_st if st_channel else 0} Studio)")
     for it in items:
         print(f"  - {it['platform']:9} {it['label']}")
 

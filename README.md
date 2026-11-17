@@ -34,6 +34,8 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 |---|---|
 | `content/instagram.json` | Library of Instagram posts (quote/feature cards + captions) |
 | `content/linkedin.json` | Library of LinkedIn text posts |
+| `content/studio_instagram.json` | GRCSAC Studio stream: one card per app or public repo, for the studio's own Instagram (see below) |
+| `studio.py` + `assets/apps/` | Portrait (1080x1350) card renderer for the studio stream, plus every app's icon |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |
 | `generate.py` / `brand.py` | The image renderer + brand system |
@@ -99,6 +101,40 @@ echo "draft text" | python quality.py - --linkedin
 
 Generated LinkedIn posts open with a hook on its own line: a plain, specific
 claim under 120 characters, because that line is all a phone shows.
+
+## The GRCSAC Studio stream (apps and repos)
+
+A second Instagram account, for the apps on grcsac.com rather than the books. It
+is a **curated** stream, never LLM-generated: every headline and caption is a
+checked product fact (price, platform, store status) taken from the app's own
+site, so a wrong claim can only come from a human edit. Items in
+`content/studio_instagram.json`:
+
+```json
+{ "id": "ig-studio-siftlet-1", "app": "siftlet", "name": "Siftlet",
+  "platform": "iPhone + Android", "status": "On the App Store",
+  "headline": "Just the recipe.", "sub": "One sentence under the headline.",
+  "footer": "siftlet.grcsac.com",
+  "caption": "Full caption, ending in up to six #hashtags" }
+```
+
+`app` picks the icon (`assets/apps/<app>.png`) and the accent colour (`studio.py`
+`ACCENT`, taken from the grcsac.com tile palette). The library is interleaved
+round-robin across apps so one week never shows three cards for the same app.
+
+Preview: `python studio.py content/studio_instagram.json ig-studio-siftlet-1 -o preview.jpg`
+or `--all -o preview/` for the whole library.
+
+The stream runs on its own cursor (`state.json` `studio_instagram`) and its own
+channel (`config.json` `channels.studio_instagram`, `posts_per_run.studio_instagram`).
+**While the channel id is `null` the stream is skipped**, so the repo can carry
+the content before the Buffer channel exists. Set the id (from
+`python list_channels.py`) and the next Sunday run picks it up.
+
+House rules for new studio items: plain founder voice, second person, no em or
+en dashes, straight quotes, no emoji, at most six hashtags, and nothing an app
+does not do today. A price goes in only if it is stable; "pay once" is safer than
+a number that will change. Run the same verifiers as for the book libraries.
 
 ## Notes & limits
 

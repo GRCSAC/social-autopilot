@@ -12,6 +12,28 @@ From here it's hands-off: every Sunday it queues the next week of posts, and Buf
 them on your Mon/Wed/Fri schedule. To change what it posts, edit `content/*.json` (see
 [README.md](README.md)).
 
+### Connecting the GRCSAC Studio Instagram (one-time, pending)
+
+The studio stream (`content/studio_instagram.json`) is in the repo and inert until
+`config.json` `channels.studio_instagram` holds a Buffer channel id. To connect it:
+
+1. In the Instagram app, on the studio account: Settings -> Account type and tools
+   -> Switch to professional account -> **Business** (or Creator). Buffer can only
+   auto-publish to a professional account; a personal one gets reminders instead.
+2. Put `www.grcsac.com` in the account's bio link; every caption says "link in bio".
+3. In Buffer (publish.buffer.com -> Channels -> Connect channel -> Instagram), log in
+   as the studio account and authorise. The free plan allows three channels; this
+   is the third alongside the GRCSAC LinkedIn page and @compassionunleashed.
+4. Set the channel's posting schedule in Buffer (Mon/Wed/Fri, like the others).
+5. Find the new channel id: `$env:BUFFER_TOKEN="..."; python list_channels.py`
+   (the token is the personal key from publish.buffer.com/settings/api), then put it
+   in `config.json` under `channels.studio_instagram` and push.
+6. Dry run from the Actions tab (tick `dry_run`) and check the log lists
+   `3 Studio` posts; the next Sunday run queues them for real.
+
+Meta tokens lapse every ~60 days. `health.py` reports it as a red run; reconnect in
+Buffer -> Channels -> Refresh/Reconnect.
+
 ### When posts actually appear
 
 The Sunday job only *queues* to Buffer. Buffer publishes on its own per-channel slots, which
