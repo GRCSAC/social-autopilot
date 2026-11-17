@@ -179,8 +179,8 @@ def _expiry(token):
     """Best effort: when a facebook token expires, from Meta's own inspector."""
     try:
         d = _call("GET", "debug_token", {"input_token": token}, token, API_FB)["data"]
-    except (RuntimeError, KeyError):
-        return "expiry unknown"
+    except (RuntimeError, KeyError) as e:
+        return f"expiry unknown ({e})"
     exp = d.get("expires_at", 0)
     scopes = ", ".join(d.get("scopes", []))
     when = "never expires" if not exp else         "expires " + datetime.fromtimestamp(exp, timezone.utc).strftime("%Y-%m-%d")
@@ -197,6 +197,16 @@ def check():
         refresh_token(rec)
     else:
         print(f"  {_expiry(rec['token'])}; nothing to refresh")
+    # Read-only proof that the token may publish: Meta only answers this with
+    # the content-publish permission. Nothing is posted.
+    try:
+        q = _call("GET", f"{acct['id']}/content_publishing_limit",
+                  {"fields": "quota_usage,config"}, rec["token"], acct["api"])
+        d = (q.get("data") or [{}])[0]
+        print(f"  may publish: yes ({d.get('quota_usage')} of "
+              f"{(d.get('config') or {}).get('quota_total')} posts used in the last 24h)")
+    except RuntimeError as e:
+        raise RuntimeError(f"token can read the account but may not publish: {e}")
     return acct
 
 
