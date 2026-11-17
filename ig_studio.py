@@ -179,8 +179,9 @@ def _expiry(token):
     """Best effort: when a facebook token expires, from Meta's own inspector."""
     try:
         d = _call("GET", "debug_token", {"input_token": token}, token, API_FB)["data"]
-    except (RuntimeError, KeyError) as e:
-        return f"expiry unknown ({e})"
+    except (RuntimeError, KeyError):
+        # Meta's inspector refuses a system-user token as its own key.
+        return "expiry not readable with this token (the login configuration issues non-expiring ones)"
     exp = d.get("expires_at", 0)
     scopes = ", ".join(d.get("scopes", []))
     when = "never expires" if not exp else         "expires " + datetime.fromtimestamp(exp, timezone.utc).strftime("%Y-%m-%d")
