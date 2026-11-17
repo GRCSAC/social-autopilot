@@ -26,6 +26,10 @@ on:
         description: "Ask Meta to accept every video and one card, publish nothing"
         type: boolean
         default: false
+      rehearse:
+        description: "Item ids, comma separated: render, host and have Meta accept them, publish nothing"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -43,6 +47,7 @@ jobs:
       IG_STUDIO_TOKEN_KEY: ${{ secrets.IG_STUDIO_TOKEN_KEY }}
       IG_STUDIO_USER_ID: ${{ vars.IG_STUDIO_USER_ID }}
       DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || '' }}
+      REHEARSE: ${{ github.event_name == 'workflow_dispatch' && inputs.rehearse || '' }}
     steps:
       - uses: actions/checkout@v4
 

@@ -25,7 +25,7 @@
   "id": "ig-studio-siftlet-1",
   "app": "siftlet",
   "name": "Siftlet",
-  "platform": "iPhone + Android",
+  "platform": "iPhone",
   "status": "On the App Store",
   "headline": "Just the recipe.",
   "sub": "From a website, a photo, a cookbook page or a cooking video to one clean card. No story, no ads, no scrolling.",
@@ -110,15 +110,27 @@
   "caption": "Have you updated In The Zone lately? The latest version is on the App Store.\n\nIt still does one thing well. Your heart rate zone becomes a colour you can read from the treadmill, and your Apple Watch taps your wrist when you drift out of it.\n\niPhone and Apple Watch. $1.99 once, no subscription.\n\ninthezone.grcsac.com (link in bio)\n\n#heartratetraining #zone2 #applewatch #runningapp #grcsac"
  },
  {
-  "id": "ig-studio-cysec-1",
-  "app": "cysec",
-  "name": "CySec",
-  "platform": "iPhone + Apple Watch",
-  "status": "On the App Store",
-  "headline": "Thousands of security problems a month. A handful are yours.",
-  "sub": "Tell CySec what you run. Hear about only what touches you, in plain words, as early as the world knows about it.",
-  "footer": "cysec.grcsac.com",
-  "caption": "Thousands of security problems are reported every month. CySec tells you which handful are actually yours.\n\nTell it what you run. It reads the public reports and tells you, in plain words, when one of them touches you. On your iPhone, and on your wrist.\n\nSeven-day free trial, then one subscription covers iPhone and Apple Watch.\n\ncysec.grcsac.com (link in bio)\n\n#cybersecurity #infosec #vulnerabilities #smallbusiness #applewatch #grcsac"
+  "id": "ig-studio-iw-android-1",
+  "app": "infiniteworlds",
+  "name": "Infinite Worlds",
+  "platform": "Android + iPhone",
+  "status": "On Google Play",
+  "footer": "infiniteworlds.grcsac.com",
+  "slides": [
+   {
+    "headline": "Rainfall City, where memories can be pawned.",
+    "sub": "That one line is a whole world. Type yours and step inside."
+   },
+   {
+    "headline": "The narrator writes what happens next.",
+    "shot": "iw-story.jpg"
+   },
+   {
+    "headline": "Hit points, gold, inventory. It keeps track.",
+    "shot": "iw-sheet.jpg"
+   }
+  ],
+  "caption": "One sentence is enough to start a world.\n\nInfinite Worlds is a solo tabletop adventure with an AI Dungeon Master that runs on your own phone. You say what your character does. The narrator writes what happens next, and remembers your inventory, the people you met and the threads you left open.\n\nIt works offline after the first download, and nothing you write leaves the device.\n\nOn Google Play and the App Store.\n\ninfiniteworlds.grcsac.com (link in bio)\n\n#aidungeonmaster #ttrpg #solorpg #androidgames #interactivefiction #grcsac"
  },
  {
   "id": "ig-studio-fitthis-reel-1",
@@ -132,15 +144,31 @@
   "caption": "The newest version of Fit This is on the App Store, where it is listed as FitThis Health.\n\nA routine builder, a library of 873 exercises, and a set logged in one tap from your wrist. Simple on day one, deep on year five.\n\niPhone and Apple Watch. $9.99 once, no subscription.\n\nfitthis.grcsac.com (link in bio)\n\n#gymapp #workoutlog #strengthtraining #applewatch #grcsac"
  },
  {
-  "id": "ig-studio-cinedrive-1",
-  "app": "cinedrive",
-  "name": "CineDrive",
-  "platform": "iPhone + CarPlay",
-  "status": "Coming soon",
-  "headline": "The films you already own, on the screen already in your car.",
-  "sub": "Through CarPlay, while parked. The same film keeps playing as audio when you drive, and picks up where it left off when you stop.",
-  "footer": "cinedrive.grcsac.com",
-  "caption": "Your own films, on the car screen, while parked.\n\nCineDrive plays the films you already own through CarPlay when the car is stopped, and keeps them playing as audio while you drive. A library built for a car, folders that behave, and posters you choose. The app makes no network requests at all.\n\nFree to try, $4.99 to keep. Coming soon.\n\ncinedrive.grcsac.com (link in bio)\n\n#carplay #roadtrip #movies #iphoneapp #comingsoon #grcsac"
+  "id": "ig-studio-sunkcost-android-1",
+  "app": "sunkcost",
+  "name": "Sunk Cost",
+  "platform": "Android + iPhone",
+  "status": "On Google Play",
+  "footer": "sunkcost.grcsac.com",
+  "slides": [
+   {
+    "headline": "This meeting has cost $500.25. So far.",
+    "sub": "Nine people. Forty-seven minutes. Still no agenda."
+   },
+   {
+    "headline": "Start the meter. Watch the damage.",
+    "shot": "sunkcost-meter.jpg"
+   },
+   {
+    "headline": "Leave with a receipt.",
+    "shot": "sunkcost-receipt.jpg"
+   },
+   {
+    "headline": "Then face your lifetime total.",
+    "shot": "sunkcost-receipts.jpg"
+   }
+  ],
+  "caption": "Nine people, forty-seven minutes, $500.25.\n\nSunk Cost puts a running meter on your meeting. Add the room by job title, start the clock, and watch the total climb. When it ends you get a receipt you can share, and a lifetime total you may prefer not to know.\n\nIt is a gag with a real calculator inside. The salaries are rough averages, and nothing leaves your phone.\n\nOn Google Play and the App Store.\n\nsunkcost.grcsac.com (link in bio)\n\n#meetings #officehumor #couldhavebeenanemail #androidapps #worklife #grcsac"
  },
  {
   "id": "ig-studio-cysec-reel-1",
@@ -154,17 +182,6 @@
   "caption": "The latest CySec is on the App Store.\n\nThe job is the same. Tell it what you run, and it tells you in plain words which of the month's reported security problems are actually yours. It does not stop attacks or patch anything, and it will not pretend to.\n\nSeven-day free trial, then one subscription covers iPhone and Apple Watch.\n\ncysec.grcsac.com (link in bio)\n\n#cybersecurity #infosec #vulnerabilities #applewatch #grcsac"
  },
  {
-  "id": "ig-studio-earnest-1",
-  "app": "earnest",
-  "name": "Earnest",
-  "platform": "iPhone",
-  "status": "Coming soon",
-  "headline": "Dating, in earnest.",
-  "sub": "For people who show up, look like their photos, and treat each other well. No casual tier, no endless swiping, nothing you can pay to skip.",
-  "footer": "earnest.grcsac.com",
-  "caption": "A dating app built on showing up, looking like your photos, and treating people well.\n\nOne name per person, kept for good. Dates confirmed in the app are your word. A day after, both of you answer the same quiet check-in, and kept words add up to badges that cannot be bought.\n\nComing soon for iPhone.\n\nearnest.grcsac.com (link in bio)\n\n#datingapp #accountability #comingsoon #iphone #grcsac"
- },
- {
   "id": "ig-studio-findr-reel-1",
   "app": "findr",
   "name": "Findr",
@@ -176,15 +193,27 @@
   "caption": "The latest version of Findr is on the App Store.\n\nRate movies, music, TV, books, games, anime and manga on gut feel. Findr finds the people whose taste matches yours, then shows you what they love that you have not found yet.\n\nFree on iPhone and Android.\n\nfindr.grcsac.com (link in bio)\n\n#tastematch #recommendations #movies #music #books #grcsac"
  },
  {
-  "id": "ig-studio-zelzi-1",
-  "app": "zelzi",
-  "name": "Zelzi",
-  "platform": "iPhone",
-  "status": "In development",
-  "headline": "Your cards. Your rules.",
-  "sub": "Turn a photo into a playable card, build a deck, choose the rules, and play original card games against the computer, offline, with no account.",
-  "footer": "games.grcsac.com",
-  "caption": "Your photos become the cards.\n\nZelzi turns a picture into a playable card, lets you build a deck, pick the rules, and play original card games against the computer. Offline, with no account. In development for iPhone, from the GRCSAC Game Studio.\n\ngames.grcsac.com (link in bio)\n\n#cardgame #indiegame #iphonegame #gamedev #comingsoon #grcsac"
+  "id": "ig-studio-pavlove-4",
+  "app": "pavlove",
+  "name": "PavLove",
+  "platform": "iPhone + Apple Watch",
+  "status": "On the App Store",
+  "footer": "pavlove.grcsac.com",
+  "headline": "9 PM. Twenty reaches for a snack.",
+  "sub": "PavLove shows you the hour your habit lives in.",
+  "shot": "pavlove-pattern.jpg",
+  "caption": "Do you know what time your snacking actually happens?\n\nPavLove counts the hand-to-mouth reaches your Apple Watch notices and shows you the pattern. In this example the busiest hour is 9 PM, with twenty taps. Once you can see the window, you can plan around it.\n\nFree to download for iPhone and Apple Watch. Pay once to keep it, no subscription.\n\npavlove.grcsac.com (link in bio)\n\n#habits #mindfuleating #snacking #applewatch #habittracker #grcsac"
+ },
+ {
+  "id": "ig-studio-cinedrive-1",
+  "app": "cinedrive",
+  "name": "CineDrive",
+  "platform": "iPhone + CarPlay",
+  "status": "Coming soon",
+  "headline": "The films you already own, on the screen already in your car.",
+  "sub": "Through CarPlay, while parked. The same film keeps playing as audio when you drive, and picks up where it left off when you stop.",
+  "footer": "cinedrive.grcsac.com",
+  "caption": "Your own films, on the car screen, while parked.\n\nCineDrive plays the films you already own through CarPlay when the car is stopped, and keeps them playing as audio while you drive. A library built for a car, folders that behave, and posters you choose. The app makes no network requests at all.\n\nFree to try, $4.99 to keep. Coming soon.\n\ncinedrive.grcsac.com (link in bio)\n\n#carplay #roadtrip #movies #iphoneapp #comingsoon #grcsac"
  },
  {
   "id": "ig-studio-iw-reel-1",
@@ -198,15 +227,31 @@
   "caption": "Infinite Worlds has been updated. On the App Store it is listed as Infinite Worlds AI Game Master.\n\nIt is a solo tabletop adventure with an AI Dungeon Master that runs on your own phone. Describe what your character does and the narrator writes what happens next. Nothing you write leaves the device.\n\nOut now for iPhone and Android.\n\ninfiniteworlds.grcsac.com (link in bio)\n\n#aidungeonmaster #ttrpg #solorpg #interactivefiction #grcsac"
  },
  {
-  "id": "ig-studio-grcsac-2",
+  "id": "ig-studio-android-1",
   "app": "grcsac",
   "name": "GRCSAC",
-  "platform": "www.grcsac.com",
-  "status": "Apps, games, tools",
-  "headline": "Most of what we make never leaves your phone.",
-  "sub": "No account unless the app truly needs one. No trackers, no ads, and no server reading what you do.",
+  "platform": "Android",
+  "status": "On Google Play",
   "footer": "www.grcsac.com",
-  "caption": "Most of what we make runs on your phone and keeps your data there.\n\nIn The Zone, PavLove, Fit This, Siftlet, Sunk Cost, Infinite Worlds and CineDrive have no account because they have no server. None of our apps carry ad trackers. Where an app does need a sign-in, like Findr, it is Apple or Google and nothing more.\n\nwww.grcsac.com (link in bio)\n\n#privacy #noads #notrackers #indiedev #iphoneapps #grcsac"
+  "headline": "Three of our apps are on Google Play.",
+  "sub": "Findr, Sunk Cost and Infinite Worlds. If you carry an Android phone, these three are for you too.",
+  "icons": [
+   "findr",
+   "sunkcost",
+   "infiniteworlds"
+  ],
+  "caption": "Carrying an Android phone? Three of our apps are on Google Play today.\n\nFindr matches you with people who share your taste. Sunk Cost shows what a meeting costs while it happens. Infinite Worlds is a solo tabletop adventure with an AI Dungeon Master that runs on your phone.\n\nWhich one would you open first?\n\nwww.grcsac.com (link in bio)\n\n#android #androidapps #googleplay #indiedev #indieapps #grcsac"
+ },
+ {
+  "id": "ig-studio-earnest-1",
+  "app": "earnest",
+  "name": "Earnest",
+  "platform": "iPhone",
+  "status": "Coming soon",
+  "headline": "Dating, in earnest.",
+  "sub": "For people who show up, look like their photos, and treat each other well. No casual tier, no endless swiping, nothing you can pay to skip.",
+  "footer": "earnest.grcsac.com",
+  "caption": "A dating app built on showing up, looking like your photos, and treating people well.\n\nOne name per person, kept for good. Dates confirmed in the app are your word. A day after, both of you answer the same quiet check-in, and kept words add up to badges that cannot be bought.\n\nComing soon for iPhone.\n\nearnest.grcsac.com (link in bio)\n\n#datingapp #accountability #comingsoon #iphone #grcsac"
  },
  {
   "id": "ig-studio-siftlet-reel-1",
@@ -220,15 +265,27 @@
   "caption": "Siftlet is on the App Store.\n\nPoint it at a website, a screenshot, a cookbook page or a cooking video and it keeps just the recipe, on a clean card. What would you cook tonight if the recipe was all you had to read?\n\nFree for your first 20 recipes, then $7.99 once.\n\nsiftlet.grcsac.com (link in bio)\n\n#recipes #homecooking #recipeapp #cookingapp #grcsac"
  },
  {
-  "id": "ig-studio-inthezone-2",
+  "id": "ig-studio-inthezone-4",
   "app": "inthezone",
   "name": "In The Zone",
   "platform": "iPhone + Apple Watch",
   "status": "On the App Store",
-  "headline": "A watch that taps you when you drift.",
-  "sub": "Set a target zone. When you climb out of it the watch tells you, with one tap for too hard and another for ease off, so you never have to look.",
   "footer": "inthezone.grcsac.com",
-  "caption": "You drift out of Zone 2 without noticing. Everyone does.\n\nIn The Zone sets a target zone on your Apple Watch and taps your wrist when you leave it. One pattern means too hard, another means pick it up. You keep your eyes on the road or the screen, not the watch.\n\n$1.99 once. Your data stays on your devices and in Apple Health.\n\ninthezone.grcsac.com (link in bio)\n\n#applewatch #zone2training #heartratezones #runningtips #treadmillworkout #grcsac"
+  "headline": "Read it from the treadmill.",
+  "sub": "The whole screen is your heart rate zone. One number, one colour, no squinting.",
+  "shot": "inthezone-treadmill.jpg",
+  "caption": "Could you read your watch at a run without breaking stride?\n\nIn The Zone turns the phone on your treadmill into one big number and one colour. Blue is recovery. When the colour changes, so has your effort. You never have to squint at your wrist.\n\niPhone and Apple Watch. $1.99 once, no subscription.\n\ninthezone.grcsac.com (link in bio)\n\n#heartratetraining #zone2 #treadmill #runningapp #applewatch #grcsac"
+ },
+ {
+  "id": "ig-studio-cysec-1",
+  "app": "cysec",
+  "name": "CySec",
+  "platform": "iPhone + Apple Watch",
+  "status": "On the App Store",
+  "headline": "Thousands of security problems a month. A handful are yours.",
+  "sub": "Tell CySec what you run. Hear about only what touches you, in plain words, as early as the world knows about it.",
+  "footer": "cysec.grcsac.com",
+  "caption": "Thousands of security problems are reported every month. CySec tells you which handful are actually yours.\n\nTell it what you run. It reads the public reports and tells you, in plain words, when one of them touches you. On your iPhone, and on your wrist.\n\nSeven-day free trial, then one subscription covers iPhone and Apple Watch.\n\ncysec.grcsac.com (link in bio)\n\n#cybersecurity #infosec #vulnerabilities #smallbusiness #applewatch #grcsac"
  },
  {
   "id": "ig-studio-sunkcost-reel-1",
@@ -242,10 +299,116 @@
   "caption": "Sunk Cost is on the App Store, and the meter is running.\n\nAdd the room by job title, start the clock, and watch what the meeting costs while it happens. You leave with a receipt you can share.\n\niPhone and Android. Nothing leaves your phone.\n\nsunkcost.grcsac.com (link in bio)\n\n#meetings #officelife #corporatehumor #worklife #grcsac"
  },
  {
+  "id": "ig-studio-findr-android-1",
+  "app": "findr",
+  "name": "Findr",
+  "platform": "Android + iPhone",
+  "status": "On Google Play",
+  "footer": "findr.grcsac.com",
+  "headline": "Your taste, drawn as a chart.",
+  "sub": "Rate what you love. Findr shows which way your taste leans.",
+  "shot": "findr-taste.jpg",
+  "caption": "What does your taste actually look like?\n\nRate movies, music, TV, books, games, anime and manga on gut feel, and Findr draws the picture: which genres you lean toward, what you loved, what you passed on. Then it finds the people whose picture looks like yours.\n\nFree on Google Play and the App Store.\n\nfindr.grcsac.com (link in bio)\n\n#tastematch #recommendations #androidapps #movies #music #grcsac"
+ },
+ {
+  "id": "ig-studio-zelzi-1",
+  "app": "zelzi",
+  "name": "Zelzi",
+  "platform": "iPhone",
+  "status": "In development",
+  "headline": "Your cards. Your rules.",
+  "sub": "Turn a photo into a playable card, build a deck, choose the rules, and play original card games against the computer, offline, with no account.",
+  "footer": "games.grcsac.com",
+  "caption": "Your photos become the cards.\n\nZelzi turns a picture into a playable card, lets you build a deck, pick the rules, and play original card games against the computer. Offline, with no account. In development for iPhone, from the GRCSAC Game Studio.\n\ngames.grcsac.com (link in bio)\n\n#cardgame #indiegame #iphonegame #gamedev #comingsoon #grcsac"
+ },
+ {
+  "id": "ig-studio-fitthis-4",
+  "app": "fitthis",
+  "name": "Fit This",
+  "platform": "iPhone + Apple Watch",
+  "status": "On the App Store",
+  "footer": "fitthis.grcsac.com",
+  "headline": "Recovery looks strong. Go lift.",
+  "sub": "Fit This reads your recovery before it tells you how hard to push.",
+  "shot": "fitthis-readiness.jpg",
+  "caption": "Should you push today, or back off?\n\nFit This looks at your heart rate variability, resting heart rate and sleep against your own baseline, and tells you plainly. On a strong day it says so. On a tired one it says that too.\n\niPhone and Apple Watch. $9.99 once, no subscription.\n\nfitthis.grcsac.com (link in bio)\n\n#gymapp #recovery #hrv #strengthtraining #applewatch #grcsac"
+ },
+ {
+  "id": "ig-studio-grcsac-2",
+  "app": "grcsac",
+  "name": "GRCSAC",
+  "platform": "www.grcsac.com",
+  "status": "Apps, games, tools",
+  "headline": "Most of what we make never leaves your phone.",
+  "sub": "No account unless the app truly needs one. No trackers, no ads, and no server reading what you do.",
+  "footer": "www.grcsac.com",
+  "caption": "Most of what we make runs on your phone and keeps your data there.\n\nIn The Zone, PavLove, Fit This, Siftlet, Sunk Cost, Infinite Worlds and CineDrive have no account because they have no server. None of our apps carry ad trackers. Where an app does need a sign-in, like Findr, it is Apple or Google and nothing more.\n\nwww.grcsac.com (link in bio)\n\n#privacy #noads #notrackers #indiedev #iphoneapps #grcsac"
+ },
+ {
+  "id": "ig-studio-siftlet-4",
+  "app": "siftlet",
+  "name": "Siftlet",
+  "platform": "iPhone",
+  "status": "On the App Store",
+  "footer": "siftlet.grcsac.com",
+  "slides": [
+   {
+    "headline": "The recipe. Not the life story.",
+    "sub": "Paste a link. Siftlet keeps the ingredients and the steps, and leaves the rest behind."
+   },
+   {
+    "headline": "One clean card.",
+    "shot": "siftlet-recipe.jpg"
+   },
+   {
+    "headline": "One step at a time, with a timer.",
+    "shot": "siftlet-cook.jpg"
+   },
+   {
+    "headline": "The timer follows you to the lock screen.",
+    "shot": "siftlet-lock.jpg"
+   }
+  ],
+  "caption": "You wanted the chicken. You got eleven paragraphs about a trip to Tuscany.\n\nSiftlet pulls the recipe out of a website, a screenshot, a cookbook page or a cooking video and keeps it on a clean card. Then it walks you through it one step at a time, with a timer that stays on your lock screen.\n\nFree for your first 20 recipes, then $7.99 once.\n\nsiftlet.grcsac.com (link in bio)\n\n#recipes #homecooking #recipeapp #cookingapp #mealprep #grcsac"
+ },
+ {
+  "id": "ig-studio-sunkcost-reel-2",
+  "app": "sunkcost",
+  "name": "Sunk Cost",
+  "platform": "Android + iPhone",
+  "status": "App Store + Google Play",
+  "footer": "sunkcost.grcsac.com",
+  "video": "studio-sunkcost-meter.mp4",
+  "caption": "Somewhere right now, this is happening to you.\n\nSunk Cost puts a meter on the meeting. Nine people at these salaries burn about $10.58 a minute, which is how forty-seven minutes becomes $500.25.\n\nOn Google Play and the App Store. Nothing leaves your phone.\n\nsunkcost.grcsac.com (link in bio)\n\n#meetings #couldhavebeenanemail #officehumor #worklife #androidapps #grcsac"
+ },
+ {
+  "id": "ig-studio-inthezone-2",
+  "app": "inthezone",
+  "name": "In The Zone",
+  "platform": "iPhone + Apple Watch",
+  "status": "On the App Store",
+  "headline": "A watch that taps you when you drift.",
+  "sub": "Set a target zone. When you climb out of it the watch tells you, with one tap for too hard and another for ease off, so you never have to look.",
+  "footer": "inthezone.grcsac.com",
+  "caption": "You drift out of Zone 2 without noticing. Everyone does.\n\nIn The Zone sets a target zone on your Apple Watch and taps your wrist when you leave it. One pattern means too hard, another means pick it up. You keep your eyes on the road or the screen, not the watch.\n\n$1.99 once. Your data stays on your devices and in Apple Health.\n\ninthezone.grcsac.com (link in bio)\n\n#applewatch #zone2training #heartratezones #runningtips #treadmillworkout #grcsac"
+ },
+ {
+  "id": "ig-studio-cysec-3",
+  "app": "cysec",
+  "name": "CySec",
+  "platform": "iPhone + Apple Watch",
+  "status": "On the App Store",
+  "footer": "cysec.grcsac.com",
+  "headline": "2 things you run are under attack. Start there.",
+  "sub": "CySec reads the day's security reports and tells you which ones touch what you run.",
+  "shot": "cysec-radar.jpg",
+  "caption": "How many security reports did you read today?\n\nOn the day in this example CySec read 586 of them. It found 161 that touched something this person runs, and 2 that were urgent. That is the whole idea: the few that are yours, in plain words.\n\nIt tells you what is publicly known. It does not stop attacks or patch anything.\n\nSeven-day free trial, then one subscription covers iPhone and Apple Watch.\n\ncysec.grcsac.com (link in bio)\n\n#cybersecurity #infosec #vulnerabilities #smallbusiness #grcsac"
+ },
+ {
   "id": "ig-studio-siftlet-2",
   "app": "siftlet",
   "name": "Siftlet",
-  "platform": "iPhone + Android",
+  "platform": "iPhone",
   "status": "On the App Store",
   "headline": "Buy only what you're missing.",
   "sub": "Siftlet makes a list of only what you need, then walks you through the cooking one step at a time.",
@@ -366,7 +529,7 @@
   "id": "ig-studio-siftlet-3",
   "app": "siftlet",
   "name": "Siftlet",
-  "platform": "iPhone + Android",
+  "platform": "iPhone",
   "status": "On the App Store",
   "headline": "Free for your first 20 recipes.",
   "sub": "Then $7.99 once. No account, no ads, no tracking. Your kitchen stays on your phone.",

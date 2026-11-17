@@ -21,7 +21,12 @@ Two kinds of token work, and the script finds out which one it was given:
   python ig_studio.py publish   # wait for the media URL, publish, advance the cursor
   python ig_studio.py probe     # ask Meta to accept every video and one card, publish nothing
 
-A library item with a "video" field is posted as a Reel from public/video/ instead
+REHEARSE=id1,id2 (the workflow's "rehearse" box) builds exactly those items and
+takes them as far as Meta accepting them, then stops: nothing is published and
+neither the cursor nor the ledger moves.
+
+A library item with "slides" is posted as a carousel, one rendered image per
+slide. A library item with a "video" field is posted as a Reel from public/video/ instead
 of a rendered card. "once": true means it is posted a single time and skipped when
 the library comes round again (a clip that says "Updated November 9" does not age
 well).
@@ -293,31 +298,45 @@ def build():
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
     CARDS.mkdir(parents=True, exist_ok=True)
     items, looked = [], 0
-    while len(items) < n and looked < len(lib):
+    rehearse = [x.strip() for x in os.environ.get("REHEARSE", "").split(",") if x.strip()]
+
+    def one(it):
+        if it.get("video"):
+            return {"label": it["id"], "caption": it["caption"],
+                    "image_urls": [], "video_url": _video_url(it)}
+        urls = []
+        specs = studio.slides_of(it)
+        for i, sp in enumerate(specs, 1):
+            tail = f"-{i}" if len(specs) > 1 else ""
+            fname = f"{it['id']}-{stamp}{tail}.jpg"
+            studio.render(sp, CARDS / fname)
+            urls.append(f"{base}/cards/{fname}" if base else None)
+        return {"label": it["id"], "caption": it["caption"], "image_urls": urls, "video_url": None}
+
+    if rehearse:
+        by_id = {it["id"]: it for it in lib}
+        missing = [x for x in rehearse if x not in by_id]
+        if missing:
+            raise SystemExit(f"rehearse: no such item(s): {', '.join(missing)}")
+        items = [one(by_id[x]) for x in rehearse]
+    while not rehearse and len(items) < n and looked < len(lib):
         it = lib[cur % len(lib)]
         cur += 1
         looked += 1
         if it.get("once") and it["id"] in done:
             continue                      # a one-time post that already ran
-        if it.get("video"):
-            items.append({"label": it["id"], "caption": it["caption"],
-                          "image_url": None, "video_url": _video_url(it)})
-        else:
-            fname = f"{it['id']}-{stamp}.jpg"
-            studio.render(it, CARDS / fname)
-            items.append({"label": it["id"], "caption": it["caption"],
-                          "image_url": f"{base}/cards/{fname}" if base else None,
-                          "video_url": None})
+        items.append(one(it))
         if it.get("once"):
             done.append(it["id"])
     next_state = dict(state)
-    next_state[CURSOR] = cur % len(lib)
-    if done:
-        next_state[ONCE_DONE] = done
+    if not rehearse:
+        next_state[CURSOR] = cur % len(lib)
+        if done:
+            next_state[ONCE_DONE] = done
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
     print(f"Built studio batch: {len(items)} post(s)")
     for it in items:
-        print(f"  - {it['label']}  {it['video_url'] or it['image_url']}")
+        print(f"  - {it['label']}  {it['video_url'] or ', '.join(u or '(no url)' for u in it['image_urls'])}")
 
 
 def _wait_live(url, tries=12, delay=20):
@@ -333,22 +352,10 @@ def _wait_live(url, tries=12, delay=20):
     return False
 
 
-def _container(acct, token, image_url, video_url, caption):
-    """Create a media container and wait until Meta has fetched and processed
-    it. Nothing is visible on the account until media_publish is called; an
-    unpublished container simply expires."""
-    api, ig_id = acct["api"], acct["id"]
-    if video_url:
-        params = {"media_type": "REELS", "video_url": video_url, "caption": caption,
-                  "share_to_feed": "true"}
-        tries = 60                        # video processing: up to 5 minutes
-    else:
-        params = {"image_url": image_url, "caption": caption}
-        tries = 12
-    cid = _call("POST", f"{ig_id}/media", params, token, api)["id"]
+def _wait_done(acct, token, cid, tries):
     st = {}
     for _ in range(tries):
-        st = _call("GET", cid, {"fields": "status_code,status"}, token, api)
+        st = _call("GET", cid, {"fields": "status_code,status"}, token, acct["api"])
         code = st.get("status_code")
         if code == "FINISHED":
             return cid
@@ -358,9 +365,33 @@ def _container(acct, token, image_url, video_url, caption):
     raise RuntimeError(f"container {cid} never finished (last: {st})")
 
 
-def _publish_one(acct, token, image_url, caption, video_url=None):
+def _container(acct, token, image_urls, video_url, caption):
+    """Create the media container for one post and wait until Meta has fetched
+    and processed it: a Reel, a single image, or a carousel of images. Nothing
+    is visible on the account until media_publish is called; an unpublished
+    container simply expires."""
     api, ig_id = acct["api"], acct["id"]
-    cid = _container(acct, token, image_url, video_url, caption)
+    if isinstance(image_urls, str):
+        image_urls = [image_urls]
+    if video_url:
+        cid = _call("POST", f"{ig_id}/media", {"media_type": "REELS", "video_url": video_url,
+                                               "caption": caption, "share_to_feed": "true"}, token, api)["id"]
+        return _wait_done(acct, token, cid, 60)       # video processing: up to 5 minutes
+    if len(image_urls) == 1:
+        cid = _call("POST", f"{ig_id}/media", {"image_url": image_urls[0], "caption": caption}, token, api)["id"]
+        return _wait_done(acct, token, cid, 12)
+    kids = []
+    for u in image_urls:
+        kid = _call("POST", f"{ig_id}/media", {"image_url": u, "is_carousel_item": "true"}, token, api)["id"]
+        kids.append(_wait_done(acct, token, kid, 12))
+    cid = _call("POST", f"{ig_id}/media", {"media_type": "CAROUSEL", "children": ",".join(kids),
+                                           "caption": caption}, token, api)["id"]
+    return _wait_done(acct, token, cid, 12)
+
+
+def _publish_one(acct, token, image_urls, caption, video_url=None):
+    api, ig_id = acct["api"], acct["id"]
+    cid = _container(acct, token, image_urls, video_url, caption)
     pub = _call("POST", f"{ig_id}/media_publish", {"creation_id": cid}, token, api)
     mid = pub["id"]
     try:
@@ -388,7 +419,7 @@ def probe():
             bad += 1
             continue
         try:
-            cid = _container(acct, rec["token"], img, vid, "probe, never published")
+            cid = _container(acct, rec["token"], [img] if img else [], vid, "probe, never published")
             print(f"  ok   {label}: Meta accepted it (container {cid}, left unpublished)")
         except Exception as e:
             print(f"  FAIL {label}: {e}")
@@ -416,7 +447,7 @@ def publish():
     batch = json.loads(BATCH.read_text(encoding="utf-8"))
     if dry:
         for it in batch["items"]:
-            print(f"  DRY RUN would publish {it['label']}: {it.get('video_url') or it['image_url']}")
+            print(f"  DRY RUN would publish {it['label']}: {it.get('video_url') or ', '.join(it['image_urls'])}")
             print("    " + it["caption"].splitlines()[0])
         print("Dry run: nothing published, state not advanced.")
         return
@@ -424,20 +455,27 @@ def publish():
     acct = resolve(rec["token"])
     if acct["kind"] == "instagram":
         rec = refresh_token(rec)
-    print(f"publishing as @{acct['username']} ({acct['kind']} API)")
+    rehearse = bool(os.environ.get("REHEARSE", "").strip())
+    print(f"{'REHEARSING, nothing will be published,' if rehearse else 'publishing'} as "
+          f"@{acct['username']} ({acct['kind']} API)")
     failures = 0
     for it in batch["items"]:
-        url = it.get("video_url") or it["image_url"]
-        if not url:
+        urls = [it["video_url"]] if it.get("video_url") else list(it.get("image_urls") or [])
+        if not urls or not all(urls):
             print(f"  FAIL {it['label']}: no media URL")
             failures += 1
             continue
-        if not _wait_live(url):
+        if not all(_wait_live(u) for u in urls):
             print(f"  FAIL {it['label']}: media never became reachable")
             failures += 1
             continue
         try:
-            mid, link = _publish_one(acct, rec["token"], it["image_url"], it["caption"],
+            if rehearse:
+                cid = _container(acct, rec["token"], it.get("image_urls"), it.get("video_url"), it["caption"])
+                kind = "Reel" if it.get("video_url") else ("carousel of %d" % len(urls) if len(urls) > 1 else "image")
+                print(f"  ok   {it['label']}: Meta accepted the {kind} (container {cid}, left unpublished)")
+                continue
+            mid, link = _publish_one(acct, rec["token"], it.get("image_urls"), it["caption"],
                                      it.get("video_url"))
             print(f"  published {it['label']} -> {mid} {link}")
         except Exception as e:
@@ -445,6 +483,9 @@ def publish():
             failures += 1
     if failures:
         raise SystemExit(f"{failures} post(s) failed; cursor not advanced, retried next run")
+    if rehearse:
+        print("Rehearsal done: nothing published, cursor and ledger untouched.")
+        return
     STATE.write_text(json.dumps(batch["next_state"], indent=2) + "\n", encoding="utf-8")
     _record([it["label"] for it in batch["items"]], batch["next_state"])
     print(f"cursor advanced: {CURSOR} = {batch['next_state'][CURSOR]}")
