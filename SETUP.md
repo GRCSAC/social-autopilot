@@ -14,25 +14,37 @@ them on your Mon/Wed/Fri schedule. To change what it posts, edit `content/*.json
 
 ### Connecting the GRCSAC Studio Instagram (one-time, pending)
 
-The studio stream (`content/studio_instagram.json`) is in the repo and inert until
-`config.json` `channels.studio_instagram` holds a Buffer channel id. To connect it:
+The studio stream (`content/studio_instagram.json`, workflow `studio.yml`) does not
+use Buffer (its free plan is full). It publishes through Meta's **Instagram API with
+Instagram Login**, which needs a professional Instagram account and a Meta app of
+your own. The workflow fails cleanly ("No token") until the secrets exist.
 
-1. In the Instagram app, on the studio account: Settings -> Account type and tools
-   -> Switch to professional account -> **Business** (or Creator). Buffer can only
-   auto-publish to a professional account; a personal one gets reminders instead.
-2. Put `www.grcsac.com` in the account's bio link; every caption says "link in bio".
-3. In Buffer (publish.buffer.com -> Channels -> Connect channel -> Instagram), log in
-   as the studio account and authorise. The free plan allows three channels; this
-   is the third alongside the GRCSAC LinkedIn page and @compassionunleashed.
-4. Set the channel's posting schedule in Buffer (Mon/Wed/Fri, like the others).
-5. Find the new channel id: `$env:BUFFER_TOKEN="..."; python list_channels.py`
-   (the token is the personal key from publish.buffer.com/settings/api), then put it
-   in `config.json` under `channels.studio_instagram` and push.
-6. Dry run from the Actions tab (tick `dry_run`) and check the log lists
-   `3 Studio` posts; the next Sunday run queues them for real.
+1. **Make the account professional.** Instagram app, studio account: Settings ->
+   Account type and tools -> Switch to professional account -> Business (Creator also
+   works). Put `https://www.grcsac.com` in the bio link; every caption says "link in bio".
+2. **Create the Meta app.** developers.facebook.com -> My Apps -> Create app -> use
+   case "Other" -> type **Business** -> name it (for example `GRCSAC Studio Autopilot`).
+   On the app dashboard add the **Instagram** product, then open
+   *Instagram -> API setup with Instagram login*.
+3. **Add the account and get a token.** In that panel, step "Generate access tokens":
+   Add account -> log in as the studio Instagram account -> accept. Then
+   **Generate token**, tick the `instagram_business_basic` and
+   `instagram_business_content_publish` scopes, and copy the long-lived token. The
+   app can stay in Development mode: it only ever acts on an account that has a
+   role on the app, which this one now has.
+4. **Make an encryption key** (any machine with Python):
+   `python -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())"`
+5. **Add two GitHub secrets** (repo Settings -> Secrets and variables -> Actions):
+   `IG_STUDIO_TOKEN` = the token from step 3, `IG_STUDIO_TOKEN_KEY` = the key from step 4.
+6. **Verify** from the Actions tab: run *Studio Instagram* with `check_only` ticked.
+   The log should name the studio account. Then run it with `dry_run` ticked to see
+   the card it would post. The next Mon/Wed/Fri 16:00 UTC slot posts for real.
 
-Meta tokens lapse every ~60 days. `health.py` reports it as a red run; reconnect in
-Buffer -> Channels -> Refresh/Reconnect.
+After the first real run the refreshed token lives in `content/ig_studio_token.enc`
+(encrypted with the key) and the `IG_STUDIO_TOKEN` secret is no longer read. If the
+schedule ever stops for 60+ days the token dies: generate a new one (step 3),
+update the secret, and delete the `.enc` file so the bootstrap path runs again.
+Revoking a leaked token: Meta app dashboard -> the same panel -> remove the account.
 
 ### When posts actually appear
 

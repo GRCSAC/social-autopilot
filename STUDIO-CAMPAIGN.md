@@ -1,8 +1,8 @@
 # GRCSAC Studio on Instagram: the campaign
 
 Written 2026-11-16. The studio Instagram account exists; the posting pipeline for it
-is in this repo (`content/studio_instagram.json`, `studio.py`) and goes live the week
-the Buffer channel id lands in `config.json` (steps in [SETUP.md](SETUP.md)).
+is in this repo (`content/studio_instagram.json`, `studio.py`, `ig_studio.py`) and goes
+live once the Meta app token lands in GitHub secrets (steps in [SETUP.md](SETUP.md)).
 
 ## What it is for
 
@@ -14,8 +14,9 @@ after seeing one app and discovers the other ten, and to make the studio's stanc
 
 ## Cadence
 
-- 3 posts a week, Mon/Wed/Fri, queued every Sunday by the autopilot, published by
-  Buffer at the channel's slots. Same rhythm as the two existing channels.
+- 3 posts a week, Mon/Wed/Fri at 16:00 UTC (11am ET), each published at that moment
+  by `studio.yml` directly through Meta's Instagram API. Buffer is not involved:
+  its free plan is full, and the direct route has no queue cap and no third party.
 - The library has 33 cards across 13 subjects, interleaved so a week never repeats
   an app. One full cycle is about 11 weeks; after that it repeats, which is fine on
   Instagram, and new cards are appended as apps ship.

@@ -36,6 +36,8 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 | `content/linkedin.json` | Library of LinkedIn text posts |
 | `content/studio_instagram.json` | GRCSAC Studio stream: one card per app or public repo, for the studio's own Instagram (see below) |
 | `studio.py` + `assets/apps/` | Portrait (1080x1350) card renderer for the studio stream, plus every app's icon |
+| `ig_studio.py` + `.github/workflows/studio.yml` | Publishes the studio stream directly through Meta's Instagram API, Mon/Wed/Fri (no Buffer) |
+| `content/ig_studio_token.enc` | The studio account's Instagram token, Fernet-encrypted, refreshed by every run |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |
 | `generate.py` / `brand.py` | The image renderer + brand system |
@@ -125,11 +127,19 @@ round-robin across apps so one week never shows three cards for the same app.
 Preview: `python studio.py content/studio_instagram.json ig-studio-siftlet-1 -o preview.jpg`
 or `--all -o preview/` for the whole library.
 
-The stream runs on its own cursor (`state.json` `studio_instagram`) and its own
-channel (`config.json` `channels.studio_instagram`, `posts_per_run.studio_instagram`).
-**While the channel id is `null` the stream is skipped**, so the repo can carry
-the content before the Buffer channel exists. Set the id (from
-`python list_channels.py`) and the next Sunday run picks it up.
+**This stream does not go through Buffer.** Buffer's free plan is full, so
+`ig_studio.py` publishes straight to the studio account through Meta's Instagram
+API (the "Instagram Login" flavour: a professional Instagram account and a Meta
+app, no Facebook Page). `.github/workflows/studio.yml` runs it Mon/Wed/Fri at
+16:00 UTC and publishes one card per run (`config.json` `studio.posts_per_run`),
+on its own cursor (`state.json` `studio_instagram`). Same trick as the rest of
+the repo: the card is committed, jsDelivr serves it, and Meta fetches it by URL.
+
+The 60-day Meta token is refreshed on every run and written back, encrypted with
+a Fernet key held in GitHub secrets, to `content/ig_studio_token.enc`, so it never
+ages out while the schedule keeps running. Setup steps are in
+[SETUP.md](SETUP.md); `python ig_studio.py check` tells you which account the
+token belongs to and when it expires.
 
 House rules for new studio items: plain founder voice, second person, no em or
 en dashes, straight quotes, no emoji, at most six hashtags, and nothing an app

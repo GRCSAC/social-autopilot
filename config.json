@@ -3,13 +3,15 @@
   "channels": {
     "linkedin": "6a50e20940483446288f2141",
     "instagram": "6a5181b5404834462892740c",
-    "netvane_linkedin": "6a50e20940483446288f2141",
-    "studio_instagram": null
+    "netvane_linkedin": "6a50e20940483446288f2141"
   },
   "posts_per_run": {
     "linkedin": 1,
     "instagram": 3,
-    "netvane_linkedin": 2,
-    "studio_instagram": 3
+    "netvane_linkedin": 2
+  },
+  "studio": {
+    "posts_per_run": 1,
+    "_note": "GRCSAC Studio Instagram, published directly by ig_studio.py (studio.yml), not Buffer"
   }
 }
