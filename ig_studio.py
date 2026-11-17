@@ -15,9 +15,16 @@ Two kinds of token work, and the script finds out which one it was given:
               is what the GRCSAC Studio Autopilot app issues. It needs the
               account's Instagram ID in IG_STUDIO_USER_ID.
 
-  python ig_studio.py check     # who the token belongs to, when it expires
+  python ig_studio.py check     # who the token belongs to, may it publish, latest posts
+  python ig_studio.py gate      # should a scheduled run post today? (writes go=true/false)
   python ig_studio.py build     # render the next card(s) into public/cards + _studio_batch.json
-  python ig_studio.py publish   # wait for the image URL, publish, advance the cursor
+  python ig_studio.py publish   # wait for the media URL, publish, advance the cursor
+  python ig_studio.py probe     # ask Meta to accept every video and one card, publish nothing
+
+A library item with a "video" field is posted as a Reel from public/video/ instead
+of a rendered card. "once": true means it is posted a single time and skipped when
+the library comes round again (a clip that says "Updated November 9" does not age
+well).
 
 Environment:
   IG_STUDIO_TOKEN       the token (GitHub secret). For an instagram token it is only the
@@ -51,6 +58,11 @@ CONFIG = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
 STATE = ROOT / "content" / "state.json"
 LIB = ROOT / "content" / "studio_instagram.json"
 CARDS = ROOT / "public" / "cards"
+VIDEO = ROOT / "public" / "video"
+LEDGER = ROOT / "content" / "studio_schedule.json"
+ONCE_DONE = "studio_once_done"
+SLOT_DAYS = {0, 2, 4}           # Mon, Wed, Fri
+SLOT_HOUR = 11                  # America/New_York
 BATCH = ROOT / "_studio_batch.json"
 TOKEN_FILE = ROOT / "content" / "ig_studio_token.enc"
 
@@ -226,30 +238,86 @@ def _load_lib():
     return json.loads(LIB.read_text(encoding="utf-8"))
 
 
+def _base():
+    return os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+
+
+def _video_url(it):
+    f = VIDEO / it["video"]
+    if not f.exists():
+        raise RuntimeError(f"{it['id']}: video file missing: public/video/{it['video']}")
+    return f"{_base()}/video/{it['video']}" if _base() else None
+
+
+def gate():
+    """Decide whether a scheduled run posts now. Slots are Mon/Wed/Fri 11:00
+    Eastern; the workflow fires at 15:00 and 16:00 UTC so one of the two lands
+    on 11:00 in both winter and summer time. A date already in the ledger (a
+    post scheduled in Business Suite, or one this workflow already published)
+    is never posted to twice."""
+    from zoneinfo import ZoneInfo
+    now = datetime.now(ZoneInfo("America/New_York"))
+    today = now.date().isoformat()
+    start = CONFIG.get("studio", {}).get("api_start", "")
+    led = json.loads(LEDGER.read_text(encoding="utf-8"))
+    if os.environ.get("GITHUB_EVENT_NAME", "schedule") != "schedule":
+        go, why = True, "started by hand"
+    elif start and today < start:
+        go, why = False, f"before the API start date {start}"
+    elif now.weekday() not in SLOT_DAYS:
+        go, why = False, "not a Monday, Wednesday or Friday in New York"
+    elif now.hour < SLOT_HOUR:
+        go, why = False, f"before {SLOT_HOUR}:00 in New York"
+    elif any(r["date"] == today for r in led["scheduled"]):
+        go, why = False, f"{today} already has a post in the ledger"
+    else:
+        go, why = True, f"slot {today} {SLOT_HOUR}:00 New York is free"
+    print(f"gate: {'GO' if go else 'SKIP'} ({why})")
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a", encoding="utf-8") as f:
+            f.write(f"go={'true' if go else 'false'}\n")
+    return go
+
+
 def build():
     import studio
-    base = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+    base = _base()
     if not base:
-        print("WARNING: PUBLIC_BASE_URL not set; image URLs will be blank")
+        print("WARNING: PUBLIC_BASE_URL not set; media URLs will be blank")
     n = CONFIG.get("studio", {}).get("posts_per_run", 1)
     lib = _load_lib()
     state = json.loads(STATE.read_text(encoding="utf-8"))
-    start = state.get(CURSOR, 0)
+    cur = state.get(CURSOR, 0)
+    done = list(state.get(ONCE_DONE, []))
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
     CARDS.mkdir(parents=True, exist_ok=True)
-    items = []
-    for i in range(n):
-        it = lib[(start + i) % len(lib)]
-        fname = f"{it['id']}-{stamp}.jpg"
-        studio.render(it, CARDS / fname)
-        items.append({"label": it["id"], "caption": it["caption"],
-                      "image_url": f"{base}/cards/{fname}" if base else None})
+    items, looked = [], 0
+    while len(items) < n and looked < len(lib):
+        it = lib[cur % len(lib)]
+        cur += 1
+        looked += 1
+        if it.get("once") and it["id"] in done:
+            continue                      # a one-time post that already ran
+        if it.get("video"):
+            items.append({"label": it["id"], "caption": it["caption"],
+                          "image_url": None, "video_url": _video_url(it)})
+        else:
+            fname = f"{it['id']}-{stamp}.jpg"
+            studio.render(it, CARDS / fname)
+            items.append({"label": it["id"], "caption": it["caption"],
+                          "image_url": f"{base}/cards/{fname}" if base else None,
+                          "video_url": None})
+        if it.get("once"):
+            done.append(it["id"])
     next_state = dict(state)
-    next_state[CURSOR] = (start + n) % len(lib)
+    next_state[CURSOR] = cur % len(lib)
+    if done:
+        next_state[ONCE_DONE] = done
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
     print(f"Built studio batch: {len(items)} post(s)")
     for it in items:
-        print(f"  - {it['label']}  {it['image_url']}")
+        print(f"  - {it['label']}  {it['video_url'] or it['image_url']}")
 
 
 def _wait_live(url, tries=12, delay=20):
@@ -265,20 +333,34 @@ def _wait_live(url, tries=12, delay=20):
     return False
 
 
-def _publish_one(acct, token, image_url, caption):
+def _container(acct, token, image_url, video_url, caption):
+    """Create a media container and wait until Meta has fetched and processed
+    it. Nothing is visible on the account until media_publish is called; an
+    unpublished container simply expires."""
     api, ig_id = acct["api"], acct["id"]
-    res = _call("POST", f"{ig_id}/media", {"image_url": image_url, "caption": caption}, token, api)
-    cid = res["id"]
-    for _ in range(12):
+    if video_url:
+        params = {"media_type": "REELS", "video_url": video_url, "caption": caption,
+                  "share_to_feed": "true"}
+        tries = 60                        # video processing: up to 5 minutes
+    else:
+        params = {"image_url": image_url, "caption": caption}
+        tries = 12
+    cid = _call("POST", f"{ig_id}/media", params, token, api)["id"]
+    st = {}
+    for _ in range(tries):
         st = _call("GET", cid, {"fields": "status_code,status"}, token, api)
         code = st.get("status_code")
         if code == "FINISHED":
-            break
+            return cid
         if code == "ERROR":
             raise RuntimeError(f"container {cid} failed: {st.get('status')}")
         time.sleep(5)
-    else:
-        raise RuntimeError(f"container {cid} never finished (last: {st})")
+    raise RuntimeError(f"container {cid} never finished (last: {st})")
+
+
+def _publish_one(acct, token, image_url, caption, video_url=None):
+    api, ig_id = acct["api"], acct["id"]
+    cid = _container(acct, token, image_url, video_url, caption)
     pub = _call("POST", f"{ig_id}/media_publish", {"creation_id": cid}, token, api)
     mid = pub["id"]
     try:
@@ -288,12 +370,53 @@ def _publish_one(acct, token, image_url, caption):
     return mid, link
 
 
+def probe():
+    """Dress rehearsal: have Meta fetch and process every video in the library
+    and the newest hosted card, and report what it says. Publishes nothing."""
+    rec = load_token()
+    acct = resolve(rec["token"])
+    print(f"probing as @{acct['username']} ({acct['kind']} API); nothing will be published")
+    jobs = [(it["id"], None, _video_url(it)) for it in _load_lib() if it.get("video")]
+    cards = sorted(CARDS.glob("ig-studio-*.jpg"), key=lambda f: f.name)
+    if cards and _base():
+        jobs.append((cards[-1].stem, f"{_base()}/cards/{cards[-1].name}", None))
+    bad = 0
+    for label, img, vid in jobs:
+        url = vid or img
+        if not url or not _wait_live(url):
+            print(f"  FAIL {label}: not reachable at {url}")
+            bad += 1
+            continue
+        try:
+            cid = _container(acct, rec["token"], img, vid, "probe, never published")
+            print(f"  ok   {label}: Meta accepted it (container {cid}, left unpublished)")
+        except Exception as e:
+            print(f"  FAIL {label}: {e}")
+            bad += 1
+    if bad:
+        raise SystemExit(f"{bad} of {len(jobs)} item(s) were not accepted")
+    print(f"all {len(jobs)} item(s) accepted")
+
+
+def _record(labels, next_state):
+    """Write what was just published into the ledger, so the gate never posts
+    twice on one date and the ledger stays the single history of the account."""
+    from zoneinfo import ZoneInfo
+    today = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+    led = json.loads(LEDGER.read_text(encoding="utf-8"))
+    for label in labels:
+        led["scheduled"].append({"id": label, "date": today, "time": f"{SLOT_HOUR}:00",
+                                 "scheduled_on": today, "via": "api"})
+    led["next_cursor"] = next_state[CURSOR]
+    LEDGER.write_text(json.dumps(led, indent=1) + "\n", encoding="utf-8")
+
+
 def publish():
     dry = os.environ.get("DRY_RUN") == "1"
     batch = json.loads(BATCH.read_text(encoding="utf-8"))
     if dry:
         for it in batch["items"]:
-            print(f"  DRY RUN would publish {it['label']}: {it['image_url']}")
+            print(f"  DRY RUN would publish {it['label']}: {it.get('video_url') or it['image_url']}")
             print("    " + it["caption"].splitlines()[0])
         print("Dry run: nothing published, state not advanced.")
         return
@@ -304,16 +427,18 @@ def publish():
     print(f"publishing as @{acct['username']} ({acct['kind']} API)")
     failures = 0
     for it in batch["items"]:
-        if not it["image_url"]:
-            print(f"  FAIL {it['label']}: no image URL")
+        url = it.get("video_url") or it["image_url"]
+        if not url:
+            print(f"  FAIL {it['label']}: no media URL")
             failures += 1
             continue
-        if not _wait_live(it["image_url"]):
-            print(f"  FAIL {it['label']}: image never became reachable")
+        if not _wait_live(url):
+            print(f"  FAIL {it['label']}: media never became reachable")
             failures += 1
             continue
         try:
-            mid, link = _publish_one(acct, rec["token"], it["image_url"], it["caption"])
+            mid, link = _publish_one(acct, rec["token"], it["image_url"], it["caption"],
+                                     it.get("video_url"))
             print(f"  published {it['label']} -> {mid} {link}")
         except Exception as e:
             print(f"  FAIL {it['label']}: {e}")
@@ -321,9 +446,10 @@ def publish():
     if failures:
         raise SystemExit(f"{failures} post(s) failed; cursor not advanced, retried next run")
     STATE.write_text(json.dumps(batch["next_state"], indent=2) + "\n", encoding="utf-8")
+    _record([it["label"] for it in batch["items"]], batch["next_state"])
     print(f"cursor advanced: {CURSOR} = {batch['next_state'][CURSOR]}")
 
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "check"
-    {"check": check, "build": build, "publish": publish}[cmd]()
+    {"check": check, "gate": gate, "build": build, "publish": publish, "probe": probe}[cmd]()

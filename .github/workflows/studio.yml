@@ -1,11 +1,17 @@
 name: Studio Instagram
 
-# PARKED. The studio Instagram is scheduled natively in Meta Business Suite (see
-# STUDIO-SCHEDULING.md). This workflow is the direct-API route. The Meta app behind
-# it exists since 2026-11-17; until its token is checked and the Business Suite
-# queue has run out, it has no schedule and only runs by hand from the Actions tab.
+# The GRCSAC Studio Instagram (@grcsac_studio), published straight through Meta's
+# API by ig_studio.py. Posts already scheduled in Meta Business Suite run until
+# 2026-12-07; this workflow takes over on 2026-12-09 (config.json studio.api_start).
+# See STUDIO-SCHEDULING.md.
 
 on:
+  schedule:
+    # Mon/Wed/Fri at 15:00 and 16:00 UTC. One of the two is 11:00 in New York
+    # (16:00 UTC in winter, 15:00 UTC in summer). `ig_studio.py gate` lets only
+    # that one post, and never on a date that already has a post in the ledger.
+    - cron: "0 15 * * 1,3,5"
+    - cron: "0 16 * * 1,3,5"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -14,6 +20,10 @@ on:
         default: false
       check_only:
         description: "Only check the token and account, then stop"
+        type: boolean
+        default: false
+      probe:
+        description: "Ask Meta to accept every video and one card, publish nothing"
         type: boolean
         default: false
 
@@ -43,16 +53,24 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Is there a free slot right now?
+        id: gate
+        run: python ig_studio.py gate
+
       - name: Check token and account
-        if: ${{ env.DRY_RUN != '1' }}
+        if: ${{ steps.gate.outputs.go == 'true' && env.DRY_RUN != '1' }}
         run: python ig_studio.py check
 
-      - name: Render the next card
-        if: ${{ !inputs.check_only }}
+      - name: Probe (Meta fetches the media, nothing is published)
+        if: ${{ steps.gate.outputs.go == 'true' && inputs.probe }}
+        run: python ig_studio.py probe
+
+      - name: Render the next post
+        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe }}
         run: python ig_studio.py build
 
       - name: Publish image (commit -> jsDelivr serves it)
-        if: ${{ !inputs.check_only }}
+        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe }}
         run: |
           git config user.name  "social-autopilot[bot]"
           git config user.email "autopilot@users.noreply.github.com"
@@ -66,20 +84,20 @@ jobs:
           fi
 
       - name: Post to Instagram
-        if: ${{ !inputs.check_only }}
+        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe }}
         run: python ig_studio.py publish
 
-      - name: Save cursor and refreshed token
-        if: always()
+      - name: Save cursor, ledger and refreshed token
+        if: ${{ always() && steps.gate.outputs.go == 'true' }}
         run: |
           git config user.name  "social-autopilot[bot]"
           git config user.email "autopilot@users.noreply.github.com"
-          git add content/state.json
+          git add content/state.json content/studio_schedule.json
           [ -f content/ig_studio_token.enc ] && git add content/ig_studio_token.enc
           if git diff --cached --quiet; then
             echo "Nothing to save."
           else
-            git commit -m "studio: advance cursor / refresh token ($(date -u +%F))"
+            git commit -m "studio: advance cursor ($(date -u +%F))"
             git pull --rebase origin main
             git push
           fi

@@ -142,6 +142,8 @@ if __name__ == "__main__":
     items = json.loads(Path(a.library).read_text(encoding="utf-8"))
     if a.all:
         for it in items:
+            if it.get("video"):
+                continue                  # posted as a Reel, no card to render
             print(render(it, Path(a.out) / f"{it['id']}.jpg"))
     else:
         it = next(x for x in items if x["id"] == a.item)
