@@ -35,7 +35,8 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 | `content/instagram.json` | Library of Instagram posts (quote/feature cards + captions) |
 | `content/linkedin.json` | Library of LinkedIn text posts |
 | `content/studio_instagram.json` | GRCSAC Studio stream: cards and short videos per app or public repo, for the studio's own Instagram (see below) |
-| `studio.py` + `assets/apps/` | Portrait (1080x1350) card renderer for the studio stream, plus every app's icon |
+| `studio.py` + `assets/apps/` + `assets/shots/` | Portrait (1080x1350) card renderer for the studio stream: typographic cards, screenshot cards and carousel slides, plus every app's icon and the store screenshots used |
+| `tools/make_meter_reel.py` | Renders the animated Sunk Cost meter Reel (Pillow + ffmpeg, run on a laptop) |
 | `studio_queue.py` + `content/studio_schedule.json` | The ledger of every studio post by date, and the retired planner for Meta Business Suite (see STUDIO-SCHEDULING.md) |
 | `ig_studio.py` + `.github/workflows/studio.yml` + `public/video/` | Publishes the studio stream through Meta's API, Mon/Wed/Fri from 2026-12-09: rendered cards and Reels |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
@@ -135,8 +136,10 @@ next video from `public/video/`, posts it, and records it in
 `content/studio_schedule.json`. How the schedule, the gate and the token work is
 in [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
 
-A video item has `"video": "file.mp4"` in place of `headline` and `sub`, and is
-posted as a Reel. `"once": true` posts it a single time.
+An item can also be a screenshot card (`"shot": "file.jpg"` from `assets/shots/`),
+a carousel (`"slides": [...]`), or a Reel (`"video": "file.mp4"` from
+`public/video/`). `"once": true` posts it a single time. The table of item kinds
+and how to rehearse a new one without publishing it is in STUDIO-SCHEDULING.md.
 
 House rules for new studio items: plain founder voice, second person, no em or
 en dashes, straight quotes, no emoji, at most six hashtags, and nothing an app

@@ -122,8 +122,11 @@ with Instagram login" is not available for newer apps. The difference matters:
 - `check_only` identifies @grcsac_studio, and Meta confirms the token may publish
   (a read-only quota call).
 - `dry_run` renders and hosts the next card.
-- `probe` had Meta fetch and process all seven videos and one card. All eight were
-  accepted. The containers were left unpublished and expire on their own.
+- `probe` had Meta fetch and process all seven App Store clips and one card. All
+  eight were accepted.
+- `rehearse` took the ten posts added later that day (five screenshot cards, three
+  carousels, one icon card, one generated Reel) as far as Meta accepting them.
+  All ten were accepted. Containers left unpublished expire on their own.
 
 **The one step never run is the final publish call**, because it posts at once. The
 first scheduled run on 2026-12-09 is the first real one.
@@ -156,22 +159,41 @@ Instagram" on that page.
 - A failed run does not advance the cursor. The next slot retries the same item,
   and GitHub emails the repository owner about the failed run.
 - Runs started by hand skip the gate. With no box ticked, **Run workflow posts
-  the next item immediately.** Tick `check_only`, `dry_run` or `probe` unless
-  that is what you want.
+  the next item immediately.** Tick `check_only`, `dry_run` or `probe`, or fill in
+  `rehearse`, unless that is what you want.
 
-### Video posts (Reels)
+### What a library item can be
 
-A library item with `"video": "file.mp4"` is posted as a Reel from `public/video/`
-instead of a rendered card. `"once": true` means it runs a single time and is
-skipped when the library comes round again. The seven App Store clips added on
-2026-11-17 are all `once`, because a clip that says "Updated November 9, 2026"
-does not age well. They are interleaved with the cards from the cursor onward, a
-clip then a card, so no week shows the same app twice; the last clip runs on
-2027-01-06.
+| The item has | It is posted as |
+|---|---|
+| `headline`, `sub` | one typographic card (add `"icons": ["findr", ...]` for a row of app icons) |
+| `headline`, `shot` | one card with a real screenshot from `assets/shots/` in a phone frame |
+| `slides: [...]` | a carousel, one image per slide; each slide is one of the two above |
+| `video` | a Reel from `public/video/` |
+
+`"once": true` posts an item a single time and skips it when the library comes
+round again. The seven App Store clips added on 2026-11-17 are all `once`,
+because a clip that says "Updated November 9, 2026" does not age well.
+
+The queue from the cursor onward is laid out by hand so that no week shows the
+same app twice and the dated clips go early: a clip, a new post, a card. The
+last App Store clip runs on 2027-01-11.
 
 To add a clip: put the file in `public/video/` (1080x1920 MP4, under 20 MB so
-jsDelivr serves it), add the item after the cursor, push, and run the workflow
-with `probe` to confirm Meta accepts it.
+jsDelivr serves it) and add the item after the cursor. To add a screenshot: put
+it in `assets/shots/` (900 px wide JPEG) and name it in `shot`. Screenshots come
+from the apps' own store listings; check each one for anything personal before
+it goes into this public repo. Then push and run the workflow with the item's id
+in the `rehearse` box: it renders, hosts and has Meta accept the item, and
+publishes nothing.
+
+`tools/make_meter_reel.py` renders the animated Sunk Cost meter Reel with Pillow
+and ffmpeg. Run it on a laptop; the MP4 is committed, so the workflow never
+renders video.
+
+Meta fetches media the moment it is asked, and a file pushed seconds earlier may
+not be on every CDN edge yet. Meta then answers error 2207052. `ig_studio.py`
+waits 30 seconds and tries again, up to six times.
 
 ### To pause or stop
 

@@ -19,15 +19,18 @@ after seeing one app and discovers the other ten, and to make the studio's stanc
 - 3 posts a week, Mon/Wed/Fri at 11:00 Eastern. Buffer is not involved (its free
   plan is full). Through 7 Dec 2026 the posts sit in Meta Business Suite; from
   9 Dec a GitHub Actions workflow publishes them through Meta's API.
-- The library has 33 cards across 13 subjects, interleaved so a week never repeats
-  an app, plus seven short App Store clips that each run once, between the cards,
-  from 9 Dec 2026 to 6 Jan 2027. One full cycle of the cards is about 11 weeks;
-  after that it repeats, which is fine on Instagram, and new items are added as
-  apps ship.
+- The library has 50 items across 13 subjects, laid out so a week never repeats
+  an app: 33 typographic cards, seven App Store clips that each run once, and
+  ten posts added on 2026-11-17 that are built from the apps' own screens (five
+  screenshot cards, three swipeable carousels, one Android round-up, one
+  animated Reel). One full cycle is about 16 weeks; after that it repeats, which
+  is fine on Instagram, and new items are added as apps ship.
+- From 9 Dec 2026 a typical week is one App Store clip, one screenshot post and
+  one card, until the clips run out on 11 Jan 2027.
 - No paid promotion, no follower goals, no posting on a day there is nothing true
   to say. Measure at 90 days, not before.
 
-## Content pillars (what the 33 cards cover)
+## Content pillars
 
 | Pillar | Cards |
 |---|---|
@@ -37,8 +40,10 @@ after seeing one app and discovers the other ten, and to make the studio's stanc
 | Public repos | NextFix (Apache 2.0), Infinite Worlds desktop build, and this repo itself |
 | The studio | "One thread runs through all of it." |
 | App Store clips (video, once each) | In The Zone, Fit This, CySec, Findr, Infinite Worlds, Siftlet, Sunk Cost |
+| Android | "Three of our apps are on Google Play." plus Android posts for Findr, Sunk Cost (a carousel and the animated meter Reel) and Infinite Worlds (a carousel) |
+| The app's own screen | In The Zone treadmill, PavLove 9 PM pattern, Fit This recovery, CySec radar, Siftlet from link to lock-screen timer |
 
-Every line comes from the app's own site. Nothing promises a feature that has not
+Every line comes from the app's own site or its store screenshots. Numbers shown on a screenshot are example data and the caption says so. Nothing promises a feature that has not
 shipped. Status words on the card (On the App Store, Coming soon, In development)
 are taken from the grcsac.com tiles and must be updated when a tile changes.
 
@@ -50,6 +55,12 @@ are taken from the grcsac.com tiles and must be updated when a tile changes.
   when it sits at 0.
 - **A new app appears on grcsac.com:** add its icon to `assets/apps/`, its accent
   to `studio.py`, and two or three cards. Slot them into the interleave by hand.
+- **Android:** only Findr, Sunk Cost and Infinite Worlds are on Google Play today.
+  Siftlet's site says Android is next; do not call it available until its tile
+  and site say so. When another app reaches Google Play, add it to the round-up
+  card's `icons` and sub-line.
+- **Third-party art:** Findr's store screenshots show film posters and actors.
+  The posts here use its taste chart instead, which shows neither.
 - **Video:** the pipeline posts Reels as well as cards. Put a 1080x1920 MP4 under
   20 MB in `public/video/`, add an item with `"video"` and a caption after the
   cursor, and run the workflow's `probe` to confirm Meta accepts it. Mark a clip
