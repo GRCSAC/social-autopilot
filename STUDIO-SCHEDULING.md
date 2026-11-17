@@ -138,11 +138,10 @@ In it, pick the portfolio and grcsac_studio, then Next, Confirm, Finish. The tok
 then appears once in a "Token generated" box on the developer page: tick "I
 understand", press Copy, and paste it straight into the GitHub secret.
 
-Signing in to Facebook in a browser replaces the Instagram sign-in that Business
-Suite was using there. As of 2026-11-17 the Facebook login still gets "Unable to
-access Meta Business Suite with this account" even with the profile in the
-portfolio, so the scheduled posts can only be viewed by choosing "Log in with
-Instagram" on that page.
+Signing in to Facebook in a browser hides the Instagram sign-in that Business
+Suite was using there. The scheduled posts can still be reached; see "Changing or
+cancelling a post scheduled in Business Suite". All nine were checked on
+2026-11-17 and are intact.
 
 ### How the schedule runs
 
@@ -211,6 +210,20 @@ needs to change, and enabling it again resumes from the same cursor.
    went out.
 
 ## Changing or cancelling a post scheduled in Business Suite
+
+Getting in: with a Facebook account signed in to the same browser, Business Suite
+shows "Unable to access Meta Business Suite with this account". Click **Log in
+with Instagram** on that page. It opens Business Suite as @grcsac_studio in a new
+tab and does not sign Facebook out; the developer site then offers "Go to WWW" to
+switch back to the Facebook account.
+
+Swapping the image of a scheduled post (done on 2026-11-17 for the 23 Nov Siftlet
+card, whose platform line wrongly said "iPhone + Android"): the row's `...` menu
+-> Manage post -> Edit post. Add the new image, delete the old one with its bin
+icon, check the date and time are unchanged, then **Schedule**. A "Leave page?"
+prompt can appear straight after; choose **Continue editing** and the page goes on
+to "Scheduling your post". Do not click Schedule twice. Reopen the post to confirm.
+
 
 Business Suite -> Content -> Posts & reels -> Scheduled -> the row's `...` menu ->
 Reschedule, Edit or Delete. If you delete one, remove its row from the ledger too.
