@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 .env
 content/unhealthy.json
+preview/
