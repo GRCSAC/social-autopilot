@@ -7,7 +7,7 @@ How @grcsac_studio actually gets its posts, as of 2026-11-16.
 | Route | Verdict |
 |---|---|
 | Buffer | Free plan is full (three channels). Not used for this account. |
-| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | Built and tested. Blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists and the Meta app is set up (see "The API route" below). Still parked until a token is in place and `check_only` passes: the workflow has no schedule. |
+| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | Built and tested. Blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists and the Meta app is set up (see "The API route" below). The token is in place and `check_only` passes since 2026-11-17, but it is still parked: the workflow has no schedule until the Business Suite posts run out. |
 | Instagram's own web composer | Uploads fine, but offers only Share now. No schedule control. |
 | **Meta Business Suite** (business.facebook.com) | **Works.** "Continue with Instagram" signs in with the studio account, no Facebook needed. Its composer has "Set date and time". This is the route. |
 
@@ -66,7 +66,7 @@ Learned the hard way on 2026-11-16; the composer is not automation-friendly.
   click again; check the Scheduled list.
 - A fresh composer needs about ten seconds before its buttons exist.
 
-## The API route (set up 2026-11-17, not switched on yet)
+## The API route (token checked 2026-11-17, not switched on yet)
 
 What exists on Meta's side, so nobody repeats it:
 
@@ -107,9 +107,11 @@ with Instagram login" is not available for newer apps. The difference matters:
 | Permissions | `instagram_business_*` | `instagram_basic`, `instagram_content_publish` only |
 | Account | found from the token (`/me`) | named by `IG_STUDIO_USER_ID` |
 
-`ig_studio.py` handles both and works out which token it was given. The
-Unified-login path has been tested only as far as Meta rejecting a made-up token;
-it is **not verified** against a real one until the first `check_only` run.
+`ig_studio.py` handles both and works out which token it was given. Checked on
+2026-11-17 with the real token: the `check_only` run identifies @grcsac_studio,
+Meta confirms the token may publish (read-only quota call), and the `dry_run`
+renders and hosts the next card. **A real publish has not been run yet**, because
+it would post at once; the first scheduled run is the first real one.
 
 **Generate token** opens a Facebook approval window (`facebook.com/.../dialog/oauth`)
 in a new browser window. That window is the account owner's to complete: browser
@@ -124,18 +126,17 @@ access Meta Business Suite with this account" even with the profile in the
 portfolio, so the scheduled posts can only be viewed by choosing "Log in with
 Instagram" on that page.
 
-To switch on:
+To switch on (steps 1 and 2 were done on 2026-11-17):
 
-1. On the app's "API setup with Unified login" tab, click **Generate token** next
-   to grcsac_studio, approve in the Facebook window, and store the token as the
-   GitHub secret `IG_STUDIO_TOKEN` (never in the repo, never in chat). The token
-   does not expire, so treat it like a password.
-2. Actions -> Studio Instagram -> Run workflow with `check_only`. It prints the
-   account, the token's permissions and its expiry, and never any part of the
-   token. Fix `ig_studio.py` if the check fails, then run once with `dry_run`.
-3. Let the posts already scheduled in Business Suite run out, then put the cron
-   back in `studio.yml` and stop the Business Suite top-ups. Never run both for the
-   same dates: the ledger in `content/studio_schedule.json` is the single cursor.
+1. Generate the token and store it as the GitHub secret `IG_STUDIO_TOKEN` (never
+   in the repo, never in chat). It does not expire, so treat it like a password.
+2. Actions -> Studio Instagram -> Run workflow with `check_only`, then `dry_run`.
+   `check_only` also lists the account's latest posts, which is the quickest way
+   to see whether a scheduled post went out, whichever route scheduled it.
+3. Let the posts already scheduled in Business Suite run out (the last is 7 Dec
+   2026), then put the cron back in `studio.yml` and stop the Business Suite
+   top-ups. Never run both for the same dates: the ledger in
+   `content/studio_schedule.json` is the single cursor.
 
 ## Changing or cancelling a scheduled post
 

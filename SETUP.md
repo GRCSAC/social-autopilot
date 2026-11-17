@@ -20,10 +20,12 @@ shown. Posts are scheduled in Meta Business Suite, not Buffer and not the API;
 see [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md) for the why and the how. First
 nine posts run Mon/Wed/Fri 11:00 ET from 18 Nov to 7 Dec 2026.
 
-The parked API route (`studio.yml`, manual only) needs a Meta app token in the
-`IG_STUDIO_TOKEN` secret; `IG_STUDIO_TOKEN_KEY` is already set and unused. The Meta
+The parked API route (`studio.yml`, manual only) uses a Meta app token in the
+`IG_STUDIO_TOKEN` secret; `IG_STUDIO_TOKEN_KEY` is set and unused by this token type. The Meta
 app (GRCSAC Studio Autopilot) was created on 2026-11-17 with @grcsac_studio
-attached; generating the token and the first `check_only` run are still to do.
+attached, and on the same day the token was stored and the `check_only` and
+`dry_run` runs passed. The repository variable `IG_STUDIO_USER_ID` holds the
+account ID. No real publish has run yet.
 
 ### When posts actually appear
 

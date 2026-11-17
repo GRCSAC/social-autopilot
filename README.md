@@ -37,7 +37,7 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 | `content/studio_instagram.json` | GRCSAC Studio stream: one card per app or public repo, for the studio's own Instagram (see below) |
 | `studio.py` + `assets/apps/` | Portrait (1080x1350) card renderer for the studio stream, plus every app's icon |
 | `studio_queue.py` + `content/studio_schedule.json` | Plans and records the studio posts scheduled in Meta Business Suite (see STUDIO-SCHEDULING.md) |
-| `ig_studio.py` + `.github/workflows/studio.yml` | Parked direct-API publisher for the studio stream (needs a Meta developer token) |
+| `ig_studio.py` + `.github/workflows/studio.yml` | Parked direct-API publisher for the studio stream (token checked 2026-11-17, no schedule yet) |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |
 | `generate.py` / `brand.py` | The image renderer + brand system |
@@ -128,7 +128,7 @@ Preview: `python studio.py content/studio_instagram.json ig-studio-siftlet-1 -o 
 or `--all -o preview/` for the whole library.
 
 **This stream does not go through Buffer** (its free plan is full) **and not yet
-through Meta's API** (the Meta app was set up on 2026-11-17 but has no token yet).
+through Meta's API** (the Meta app and its token were set up and checked on 2026-11-17, but the workflow has no schedule yet).
 It is scheduled in **Meta Business Suite**, signed in with the studio
 Instagram account, three weeks ahead, Mon/Wed/Fri at 11:00 Eastern. `studio_queue.py`
 decides which card goes on which date and keeps the ledger in

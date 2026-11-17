@@ -17,7 +17,7 @@ after seeing one app and discovers the other ten, and to make the studio's stanc
 
 - 3 posts a week, Mon/Wed/Fri at 11:00 Eastern, scheduled up to three weeks ahead in
   Meta Business Suite and published by Meta. Buffer is not involved (its free plan
-  is full). Meta's API is set up but not switched on yet (STUDIO-SCHEDULING.md).
+  is full). Meta's API is set up and checked but not switched on yet (STUDIO-SCHEDULING.md).
 - The library has 33 cards across 13 subjects, interleaved so a week never repeats
   an app. One full cycle is about 11 weeks; after that it repeats, which is fine on
   Instagram, and new cards are appended as apps ship.
