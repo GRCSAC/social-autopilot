@@ -83,7 +83,6 @@ What exists on Meta's side, so nobody repeats it:
   invitation accepted at instagram.com -> Settings -> Apps and websites -> Tester
   Invites. After that the account appears under "Generate access tokens" with a
   **Generate token** link.
-
 - A login configuration, **Instagram API (Unified Login)**, created from Meta's
   template under "1. Configure your app" and selected. Without it, Generate token
   answers "Select a configuration in Step 1 before generating an access token."
