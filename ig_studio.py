@@ -208,6 +208,17 @@ def check():
               f"{(d.get('config') or {}).get('quota_total')} posts used in the last 24h)")
     except RuntimeError as e:
         raise RuntimeError(f"token can read the account but may not publish: {e}")
+    # What is actually on the account, newest first: the quickest way to see
+    # whether a scheduled post went out, whichever route scheduled it.
+    try:
+        m = _call("GET", f"{acct['id']}/media", {"fields": "timestamp,caption", "limit": 5},
+                  rec["token"], acct["api"]).get("data", [])
+        print(f"  latest posts on the account: {len(m)} shown")
+        for it in m:
+            first = (it.get("caption") or "").splitlines()[0][:60] if it.get("caption") else "(no caption)"
+            print(f"    {it.get('timestamp', '')[:16]}Z  {first}")
+    except RuntimeError as e:
+        print(f"  could not list posts: {e}")
     return acct
 
 
