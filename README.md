@@ -127,17 +127,18 @@ round-robin across apps so one week never shows three cards for the same app.
 Preview: `python studio.py content/studio_instagram.json ig-studio-siftlet-1 -o preview.jpg`
 or `--all -o preview/` for the whole library.
 
-**This stream does not go through Buffer** (its free plan is full) **and not
-through Meta's API** (a Meta developer account needs a Facebook account, and there
-is none). It is scheduled in **Meta Business Suite**, signed in with the studio
+**This stream does not go through Buffer** (its free plan is full) **and not yet
+through Meta's API** (the Meta app was set up on 2026-11-17 but has no token yet).
+It is scheduled in **Meta Business Suite**, signed in with the studio
 Instagram account, three weeks ahead, Mon/Wed/Fri at 11:00 Eastern. `studio_queue.py`
 decides which card goes on which date and keeps the ledger in
 `content/studio_schedule.json`; the procedure is in
 [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
 
 `ig_studio.py` and `.github/workflows/studio.yml` are the direct-API publisher,
-built and tested but parked: the workflow has no schedule. They become usable the
-day a Meta developer token exists.
+built and tested but parked: the workflow has no schedule. The Meta app behind it
+exists since 2026-11-17; the remaining steps are in STUDIO-SCHEDULING.md under
+"The API route".
 
 House rules for new studio items: plain founder voice, second person, no em or
 en dashes, straight quotes, no emoji, at most six hashtags, and nothing an app

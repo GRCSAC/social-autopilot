@@ -7,7 +7,7 @@ How @grcsac_studio actually gets its posts, as of 2026-11-16.
 | Route | Verdict |
 |---|---|
 | Buffer | Free plan is full (three channels). Not used for this account. |
-| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | Built and tested, but a Meta developer account can only be registered "while logged into your Facebook account", and there is no Facebook account. Parked: the workflow has no schedule. |
+| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | Built and tested. Blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists and the Meta app is set up (see "The API route" below). Still parked until a token is in place and `check_only` passes: the workflow has no schedule. |
 | Instagram's own web composer | Uploads fine, but offers only Share now. No schedule control. |
 | **Meta Business Suite** (business.facebook.com) | **Works.** "Continue with Instagram" signs in with the studio account, no Facebook needed. Its composer has "Set date and time". This is the route. |
 
@@ -65,6 +65,40 @@ Learned the hard way on 2026-11-16; the composer is not automation-friendly.
   trouble completing your request" underneath. The post is scheduled anyway. Do not
   click again; check the Scheduled list.
 - A fresh composer needs about ten seconds before its buttons exist.
+
+## The API route (set up 2026-11-17, not switched on yet)
+
+What exists on Meta's side, so nobody repeats it:
+
+- A Facebook account and a Meta for Developers registration (role: Developer).
+- A Meta app, **GRCSAC Studio Autopilot**, in development mode, with the use case
+  "Manage messaging & content on Instagram" (it is under the Content management
+  filter, not Featured) and the permissions `instagram_business_basic` and
+  `instagram_business_content_publish`.
+- A business portfolio connected to the app. Meta's setup tab will not open without
+  one, even though the app wizard lets you skip it. Meta rejects all-capitals
+  portfolio names, and a brand-new Facebook account must wait about an hour before
+  it may create one.
+- @grcsac_studio added under App roles -> Roles as an **Instagram Tester**, and the
+  invitation accepted at instagram.com -> Settings -> Apps and websites -> Tester
+  Invites. After that the account appears under "Generate access tokens" with a
+  **Generate token** link.
+
+Meta now calls this "API setup with Unified login" and says the older "API setup
+with Instagram login" is not available for newer apps. `ig_studio.py` was written
+against the Instagram-login API (`graph.instagram.com`, 60-day token with refresh).
+Whether the token this app issues works with it unchanged is **not verified** until
+the first `check_only` run.
+
+To switch on:
+
+1. Generate the token in the Meta app and store it as the GitHub secret
+   `IG_STUDIO_TOKEN` (never in the repo, never in chat).
+2. Actions -> studio -> Run workflow with `check_only`. Fix `ig_studio.py` if the
+   check fails, then run once with `dry_run`.
+3. Let the posts already scheduled in Business Suite run out, then put the cron
+   back in `studio.yml` and stop the Business Suite top-ups. Never run both for the
+   same dates: the ledger in `content/studio_schedule.json` is the single cursor.
 
 ## Changing or cancelling a scheduled post
 
