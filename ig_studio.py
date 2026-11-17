@@ -352,6 +352,23 @@ def _wait_live(url, tries=12, delay=20):
     return False
 
 
+def _create(acct, token, params):
+    """Create a container. Meta fetches the media the moment it is asked, and a
+    file pushed seconds ago may not be on every CDN edge yet: Meta then answers
+    2207052 ("media could not be fetched"). That one is worth waiting out."""
+    last = None
+    for attempt in range(6):
+        try:
+            return _call("POST", f"{acct['id']}/media", params, token, acct["api"])["id"]
+        except RuntimeError as e:
+            if "2207052" not in str(e):
+                raise
+            last = e
+            print(f"    Meta could not fetch the media yet ({attempt + 1}/6), waiting 30s")
+            time.sleep(30)
+    raise last
+
+
 def _wait_done(acct, token, cid, tries):
     st = {}
     for _ in range(tries):
@@ -374,16 +391,16 @@ def _container(acct, token, image_urls, video_url, caption):
     if isinstance(image_urls, str):
         image_urls = [image_urls]
     if video_url:
-        cid = _call("POST", f"{ig_id}/media", {"media_type": "REELS", "video_url": video_url,
-                                               "caption": caption, "share_to_feed": "true"}, token, api)["id"]
+        cid = _create(acct, token, {"media_type": "REELS", "video_url": video_url,
+                                    "caption": caption, "share_to_feed": "true"})
         return _wait_done(acct, token, cid, 60)       # video processing: up to 5 minutes
     if len(image_urls) == 1:
-        cid = _call("POST", f"{ig_id}/media", {"image_url": image_urls[0], "caption": caption}, token, api)["id"]
+        cid = _create(acct, token, {"image_url": image_urls[0], "caption": caption})
         return _wait_done(acct, token, cid, 12)
     kids = []
     for n, u in enumerate(image_urls, 1):
         try:
-            kid = _call("POST", f"{ig_id}/media", {"image_url": u, "is_carousel_item": "true"}, token, api)["id"]
+            kid = _create(acct, token, {"image_url": u, "is_carousel_item": "true"})
             kids.append(_wait_done(acct, token, kid, 12))
         except RuntimeError as e:
             raise RuntimeError(f"slide {n} of {len(image_urls)}: {e}")
