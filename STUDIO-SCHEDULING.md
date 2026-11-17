@@ -86,6 +86,10 @@ What exists on Meta's side, so nobody repeats it:
 - A login configuration, **Instagram API (Unified Login)**, created from Meta's
   template under "1. Configure your app" and selected. Without it, Generate token
   answers "Select a configuration in Step 1 before generating an access token."
+  The template was then edited (Facebook Login for Business -> Configurations ->
+  Edit): **Ad accounts** unticked under Assets, and the permissions cut to
+  `instagram_basic` and `instagram_content_publish`. As shipped, the template makes
+  the approval window create a new ad account, with no way to decline.
 - @grcsac_studio added to the business portfolio (Business settings -> Instagram
   profiles -> Add). Without it the Facebook approval window offers no Instagram
   account ("No matching results"). The Add button opens an Instagram window with
@@ -100,7 +104,7 @@ with Instagram login" is not available for newer apps. The difference matters:
 |---|---|---|
 | Host | `graph.instagram.com` | `graph.facebook.com` |
 | Token | 60 days, refreshed every run | system-user token, does not expire |
-| Permissions | `instagram_business_*` | `instagram_basic`, `instagram_content_publish` (the template also asks for comments, messages and ads) |
+| Permissions | `instagram_business_*` | `instagram_basic`, `instagram_content_publish` only |
 | Account | found from the token (`/me`) | named by `IG_STUDIO_USER_ID` |
 
 `ig_studio.py` handles both and works out which token it was given. The
@@ -110,8 +114,9 @@ it is **not verified** against a real one until the first `check_only` run.
 **Generate token** opens a Facebook approval window (`facebook.com/.../dialog/oauth`)
 in a new browser window. That window is the account owner's to complete: browser
 automation cannot see it, and it may ask for the Facebook password.
-In it, pick the portfolio and grcsac_studio, and change the optional Ad Account
-box away from "Create a new Ad Account": the publisher needs no ad account.
+In it, pick the portfolio and grcsac_studio, then Next, Confirm, Finish. The token
+then appears once in a "Token generated" box on the developer page: tick "I
+understand", press Copy, and paste it straight into the GitHub secret.
 
 Signing in to Facebook in a browser replaces the Instagram sign-in that Business
 Suite was using there. As of 2026-11-17 the Facebook login still gets "Unable to
