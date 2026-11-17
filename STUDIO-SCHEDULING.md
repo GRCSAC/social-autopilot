@@ -1,19 +1,24 @@
-# Scheduling the GRCSAC Studio Instagram (Meta Business Suite)
+# Scheduling the GRCSAC Studio Instagram
 
-How @grcsac_studio actually gets its posts, as of 2026-11-16.
+How @grcsac_studio gets its posts.
+
+- **18 Nov to 7 Dec 2026:** nine posts scheduled by hand in Meta Business Suite on
+  2026-11-16. Meta publishes them; nothing in this repo has to run.
+- **From 9 Dec 2026:** `.github/workflows/studio.yml` posts through Meta's API,
+  Mon/Wed/Fri at 11:00 Eastern, with no browser involved. See "The API route".
 
 ## Why this route
 
 | Route | Verdict |
 |---|---|
 | Buffer | Free plan is full (three channels). Not used for this account. |
-| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | Built and tested. Blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists and the Meta app is set up (see "The API route" below). The token is in place and `check_only` passes since 2026-11-17, but it is still parked: the workflow has no schedule until the Business Suite posts run out. |
+| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | **The route from 2026-12-09.** It was blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists. Token checked, all media accepted by Meta in a rehearsal. |
 | Instagram's own web composer | Uploads fine, but offers only Share now. No schedule control. |
-| **Meta Business Suite** (business.facebook.com) | **Works.** "Continue with Instagram" signs in with the studio account, no Facebook needed. Its composer has "Set date and time". This is the route. |
+| Meta Business Suite (business.facebook.com) | Works, and carried the first nine posts. "Continue with Instagram" signs in with the studio account, no Facebook needed. Its composer has "Set date and time". Retired once those nine have run: it needs a browser, and signing in to Facebook in the same browser locks it out. |
 
-So posts are scheduled in Meta's own tool, in a browser signed in as
-@grcsac_studio, a few weeks at a time. Meta publishes them at the set time; this
-repo only decides which card goes on which date and keeps the ledger.
+The first nine posts were scheduled in Meta's own tool, in a browser signed in as
+@grcsac_studio. Everything after them is published by the workflow. Either way
+this repo decides which post goes on which date and keeps the ledger.
 
 ## The moving parts
 
@@ -26,7 +31,11 @@ repo only decides which card goes on which date and keeps the ledger.
 - Slots: **Mon/Wed/Fri 11:00 America/New_York**, three weeks ahead at most, so a
   card's status line ("Coming soon", a price) is never queued long before it runs.
 
-## Topping up (about every two weeks)
+## Topping up in Business Suite (retired 2026-11-17)
+
+Kept for reference only. The Monday routine that did this is paused and must stay
+paused while the API schedule is on, or posts will double. Video items in the
+library cannot be scheduled this way.
 
 1. `git pull`, then `python studio_queue.py plan --weeks 3`. No output rows means
    the queue is already full.
@@ -66,7 +75,7 @@ Learned the hard way on 2026-11-16; the composer is not automation-friendly.
   click again; check the Scheduled list.
 - A fresh composer needs about ten seconds before its buttons exist.
 
-## The API route (token checked 2026-11-17, not switched on yet)
+## The API route (switched on 2026-11-17, first post 2026-12-09)
 
 What exists on Meta's side, so nobody repeats it:
 
@@ -108,10 +117,16 @@ with Instagram login" is not available for newer apps. The difference matters:
 | Account | found from the token (`/me`) | named by `IG_STUDIO_USER_ID` |
 
 `ig_studio.py` handles both and works out which token it was given. Checked on
-2026-11-17 with the real token: the `check_only` run identifies @grcsac_studio,
-Meta confirms the token may publish (read-only quota call), and the `dry_run`
-renders and hosts the next card. **A real publish has not been run yet**, because
-it would post at once; the first scheduled run is the first real one.
+2026-11-17 with the real token:
+
+- `check_only` identifies @grcsac_studio, and Meta confirms the token may publish
+  (a read-only quota call).
+- `dry_run` renders and hosts the next card.
+- `probe` had Meta fetch and process all seven videos and one card. All eight were
+  accepted. The containers were left unpublished and expire on their own.
+
+**The one step never run is the final publish call**, because it posts at once. The
+first scheduled run on 2026-12-09 is the first real one.
 
 **Generate token** opens a Facebook approval window (`facebook.com/.../dialog/oauth`)
 in a new browser window. That window is the account owner's to complete: browser
@@ -126,19 +141,54 @@ access Meta Business Suite with this account" even with the profile in the
 portfolio, so the scheduled posts can only be viewed by choosing "Log in with
 Instagram" on that page.
 
-To switch on (steps 1 and 2 were done on 2026-11-17):
+### How the schedule runs
 
-1. Generate the token and store it as the GitHub secret `IG_STUDIO_TOKEN` (never
-   in the repo, never in chat). It does not expire, so treat it like a password.
-2. Actions -> Studio Instagram -> Run workflow with `check_only`, then `dry_run`.
-   `check_only` also lists the account's latest posts, which is the quickest way
-   to see whether a scheduled post went out, whichever route scheduled it.
-3. Let the posts already scheduled in Business Suite run out (the last is 7 Dec
-   2026), then put the cron back in `studio.yml` and stop the Business Suite
-   top-ups. Never run both for the same dates: the ledger in
-   `content/studio_schedule.json` is the single cursor.
+- The workflow fires Mon/Wed/Fri at 15:00 and 16:00 UTC. One of the two is 11:00
+  in New York (16:00 UTC in winter, 15:00 UTC in summer). GitHub may start a
+  scheduled run late, sometimes by half an hour or more.
+- `python ig_studio.py gate` decides whether a run posts. It says no before
+  `studio.api_start` in `config.json` (2026-12-09), on any day but Mon/Wed/Fri,
+  before 11:00 New York, and on any date that already has a post in
+  `content/studio_schedule.json`. That last rule is what keeps the API off the
+  Business Suite dates and stops a second post on one day.
+- A run posts the next item in `content/studio_instagram.json`, then writes the
+  cursor to `content/state.json` and the post to the ledger, and commits both.
+- A failed run does not advance the cursor. The next slot retries the same item,
+  and GitHub emails the repository owner about the failed run.
+- Runs started by hand skip the gate. With no box ticked, **Run workflow posts
+  the next item immediately.** Tick `check_only`, `dry_run` or `probe` unless
+  that is what you want.
 
-## Changing or cancelling a scheduled post
+### Video posts (Reels)
+
+A library item with `"video": "file.mp4"` is posted as a Reel from `public/video/`
+instead of a rendered card. `"once": true` means it runs a single time and is
+skipped when the library comes round again. The seven App Store clips added on
+2026-11-17 are all `once`, because a clip that says "Updated November 9, 2026"
+does not age well. They are interleaved with the cards from the cursor onward, a
+clip then a card, so no week shows the same app twice; the last clip runs on
+2027-01-06.
+
+To add a clip: put the file in `public/video/` (1080x1920 MP4, under 20 MB so
+jsDelivr serves it), add the item after the cursor, push, and run the workflow
+with `probe` to confirm Meta accepts it.
+
+### To pause or stop
+
+Actions -> Studio Instagram -> the `...` menu -> Disable workflow. Nothing else
+needs to change, and enabling it again resumes from the same cursor.
+
+### If the token ever has to be replaced
+
+1. On the app's "API setup with Unified login" tab, click **Generate token** next
+   to grcsac_studio, approve in the Facebook window, and store the token as the
+   GitHub secret `IG_STUDIO_TOKEN` (never in the repo, never in chat). It does
+   not expire, so treat it like a password.
+2. Actions -> Studio Instagram -> Run workflow with `check_only`. It also lists
+   the account's latest posts, which is the quickest way to see whether a post
+   went out.
+
+## Changing or cancelling a post scheduled in Business Suite
 
 Business Suite -> Content -> Posts & reels -> Scheduled -> the row's `...` menu ->
 Reschedule, Edit or Delete. If you delete one, remove its row from the ledger too.

@@ -16,16 +16,15 @@ them on your Mon/Wed/Fri schedule. To change what it posts, edit `content/*.json
 
 Set up on 2026-11-16: professional (Business) profile, category Software Company,
 bio and www.grcsac.com link, business email contact@grcsac.com, no street address
-shown. Posts are scheduled in Meta Business Suite, not Buffer and not the API;
-see [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md) for the why and the how. First
-nine posts run Mon/Wed/Fri 11:00 ET from 18 Nov to 7 Dec 2026.
+shown. The first nine posts run Mon/Wed/Fri 11:00 ET from 18 Nov to 7 Dec 2026,
+scheduled in Meta Business Suite. From 9 Dec 2026 the `studio.yml` workflow posts
+through Meta's API on the same days; see [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
 
-The parked API route (`studio.yml`, manual only) uses a Meta app token in the
-`IG_STUDIO_TOKEN` secret; `IG_STUDIO_TOKEN_KEY` is set and unused by this token type. The Meta
-app (GRCSAC Studio Autopilot) was created on 2026-11-17 with @grcsac_studio
-attached, and on the same day the token was stored and the `check_only` and
-`dry_run` runs passed. The repository variable `IG_STUDIO_USER_ID` holds the
-account ID. No real publish has run yet.
+What the API route uses: a Meta app (GRCSAC Studio Autopilot, created 2026-11-17)
+with @grcsac_studio attached, its token in the `IG_STUDIO_TOKEN` secret, and the
+account ID in the repository variable `IG_STUDIO_USER_ID`. `IG_STUDIO_TOKEN_KEY`
+is set and unused by this token type. The token check, a dry run and a rehearsal
+of every video passed on 2026-11-17; the first real post is the one on 9 Dec.
 
 ### When posts actually appear
 

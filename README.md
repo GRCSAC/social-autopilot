@@ -34,10 +34,10 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 |---|---|
 | `content/instagram.json` | Library of Instagram posts (quote/feature cards + captions) |
 | `content/linkedin.json` | Library of LinkedIn text posts |
-| `content/studio_instagram.json` | GRCSAC Studio stream: one card per app or public repo, for the studio's own Instagram (see below) |
+| `content/studio_instagram.json` | GRCSAC Studio stream: cards and short videos per app or public repo, for the studio's own Instagram (see below) |
 | `studio.py` + `assets/apps/` | Portrait (1080x1350) card renderer for the studio stream, plus every app's icon |
-| `studio_queue.py` + `content/studio_schedule.json` | Plans and records the studio posts scheduled in Meta Business Suite (see STUDIO-SCHEDULING.md) |
-| `ig_studio.py` + `.github/workflows/studio.yml` | Parked direct-API publisher for the studio stream (token checked 2026-11-17, no schedule yet) |
+| `studio_queue.py` + `content/studio_schedule.json` | The ledger of every studio post by date, and the retired planner for Meta Business Suite (see STUDIO-SCHEDULING.md) |
+| `ig_studio.py` + `.github/workflows/studio.yml` + `public/video/` | Publishes the studio stream through Meta's API, Mon/Wed/Fri from 2026-12-09: rendered cards and Reels |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |
 | `generate.py` / `brand.py` | The image renderer + brand system |
@@ -127,18 +127,16 @@ round-robin across apps so one week never shows three cards for the same app.
 Preview: `python studio.py content/studio_instagram.json ig-studio-siftlet-1 -o preview.jpg`
 or `--all -o preview/` for the whole library.
 
-**This stream does not go through Buffer** (its free plan is full) **and not yet
-through Meta's API** (the Meta app and its token were set up and checked on 2026-11-17, but the workflow has no schedule yet).
-It is scheduled in **Meta Business Suite**, signed in with the studio
-Instagram account, three weeks ahead, Mon/Wed/Fri at 11:00 Eastern. `studio_queue.py`
-decides which card goes on which date and keeps the ledger in
-`content/studio_schedule.json`; the procedure is in
-[STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
+**This stream does not go through Buffer** (its free plan is full). The first nine
+posts, 18 Nov to 7 Dec 2026, were scheduled by hand in Meta Business Suite. From
+9 Dec 2026 `.github/workflows/studio.yml` publishes through Meta's API on
+Mon/Wed/Fri at 11:00 Eastern: `ig_studio.py` renders the next card, or takes the
+next video from `public/video/`, posts it, and records it in
+`content/studio_schedule.json`. How the schedule, the gate and the token work is
+in [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
 
-`ig_studio.py` and `.github/workflows/studio.yml` are the direct-API publisher,
-built and tested but parked: the workflow has no schedule. The Meta app behind it
-exists since 2026-11-17; the remaining steps are in STUDIO-SCHEDULING.md under
-"The API route".
+A video item has `"video": "file.mp4"` in place of `headline` and `sub`, and is
+posted as a Reel. `"once": true` posts it a single time.
 
 House rules for new studio items: plain founder voice, second person, no em or
 en dashes, straight quotes, no emoji, at most six hashtags, and nothing an app

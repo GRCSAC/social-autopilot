@@ -1,8 +1,9 @@
 # GRCSAC Studio on Instagram: the campaign
 
 Written 2026-11-16. The studio Instagram account exists; the posting pipeline for it
-is in this repo (`content/studio_instagram.json`, `studio.py`, `studio_queue.py`). It has
-been live since 2026-11-16: posts are scheduled in Meta Business Suite
+is in this repo (`content/studio_instagram.json`, `studio.py`, `ig_studio.py`). It has
+been live since 2026-11-16: the first nine posts were scheduled in Meta Business
+Suite, and from 2026-12-09 the repo posts through Meta's API
 ([STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md)).
 
 ## What it is for
@@ -15,12 +16,14 @@ after seeing one app and discovers the other ten, and to make the studio's stanc
 
 ## Cadence
 
-- 3 posts a week, Mon/Wed/Fri at 11:00 Eastern, scheduled up to three weeks ahead in
-  Meta Business Suite and published by Meta. Buffer is not involved (its free plan
-  is full). Meta's API is set up and checked but not switched on yet (STUDIO-SCHEDULING.md).
+- 3 posts a week, Mon/Wed/Fri at 11:00 Eastern. Buffer is not involved (its free
+  plan is full). Through 7 Dec 2026 the posts sit in Meta Business Suite; from
+  9 Dec a GitHub Actions workflow publishes them through Meta's API.
 - The library has 33 cards across 13 subjects, interleaved so a week never repeats
-  an app. One full cycle is about 11 weeks; after that it repeats, which is fine on
-  Instagram, and new cards are appended as apps ship.
+  an app, plus seven short App Store clips that each run once, between the cards,
+  from 9 Dec 2026 to 6 Jan 2027. One full cycle of the cards is about 11 weeks;
+  after that it repeats, which is fine on Instagram, and new items are added as
+  apps ship.
 - No paid promotion, no follower goals, no posting on a day there is nothing true
   to say. Measure at 90 days, not before.
 
@@ -33,6 +36,7 @@ after seeing one app and discovers the other ten, and to make the studio's stanc
 | Honest limits | CySec "One honest limit.", CineDrive "We would rather say it plainly." |
 | Public repos | NextFix (Apache 2.0), Infinite Worlds desktop build, and this repo itself |
 | The studio | "One thread runs through all of it." |
+| App Store clips (video, once each) | In The Zone, Fit This, CySec, Findr, Infinite Worlds, Siftlet, Sunk Cost |
 
 Every line comes from the app's own site. Nothing promises a feature that has not
 shipped. Status words on the card (On the App Store, Coming soon, In development)
@@ -46,9 +50,12 @@ are taken from the grcsac.com tiles and must be updated when a tile changes.
   when it sits at 0.
 - **A new app appears on grcsac.com:** add its icon to `assets/apps/`, its accent
   to `studio.py`, and two or three cards. Slot them into the interleave by hand.
-- **Reels:** this pipeline posts images only. When there is footage (the capture
-  list in the In The Zone marketing docs is the model), Buffer accepts video by
-  URL and the repo can serve files up to 20 MB through jsDelivr. Not built yet.
+- **Video:** the pipeline posts Reels as well as cards. Put a 1080x1920 MP4 under
+  20 MB in `public/video/`, add an item with `"video"` and a caption after the
+  cursor, and run the workflow's `probe` to confirm Meta accepts it. Mark a clip
+  `"once": true` if it carries a date or a claim that will age. There is no
+  original footage yet; the capture list in the In The Zone marketing docs is
+  the model for it.
 
 ## Scorecard (check at 30, 60, 90 days)
 

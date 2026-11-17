@@ -1,5 +1,10 @@
 """Plan and record GRCSAC Studio Instagram posts scheduled in Meta Business Suite.
 
+RETIRED for planning on 2026-11-17: from 2026-12-09 the account is published by
+ig_studio.py through Meta's API (see STUDIO-SCHEDULING.md), which writes its
+posts into the same ledger. `status` is still the quickest look at the ledger.
+`plan` and `done` are kept for reference and know nothing about video items.
+
 The studio account is scheduled by hand-driven browser steps (see
 STUDIO-SCHEDULING.md), not by an API. This script is the deterministic half:
 it says WHICH cards go on WHICH dates, renders them, and records what was
