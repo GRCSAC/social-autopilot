@@ -86,6 +86,11 @@ What exists on Meta's side, so nobody repeats it:
 - A login configuration, **Instagram API (Unified Login)**, created from Meta's
   template under "1. Configure your app" and selected. Without it, Generate token
   answers "Select a configuration in Step 1 before generating an access token."
+- @grcsac_studio added to the business portfolio (Business settings -> Instagram
+  profiles -> Add). Without it the Facebook approval window offers no Instagram
+  account ("No matching results"). The Add button opens an Instagram window with
+  "Log in as grcsac_studio"; the confirmation only counts when it is clicked in
+  the window Meta opened, so it has to be done by hand.
 - The repository variable `IG_STUDIO_USER_ID`, holding the account's Instagram ID.
 
 Meta now calls this "API setup with Unified login" and says the older "API setup
@@ -105,6 +110,14 @@ it is **not verified** against a real one until the first `check_only` run.
 **Generate token** opens a Facebook approval window (`facebook.com/.../dialog/oauth`)
 in a new browser window. That window is the account owner's to complete: browser
 automation cannot see it, and it may ask for the Facebook password.
+In it, pick the portfolio and grcsac_studio, and change the optional Ad Account
+box away from "Create a new Ad Account": the publisher needs no ad account.
+
+Signing in to Facebook in a browser replaces the Instagram sign-in that Business
+Suite was using there. As of 2026-11-17 the Facebook login still gets "Unable to
+access Meta Business Suite with this account" even with the profile in the
+portfolio, so the scheduled posts can only be viewed by choosing "Log in with
+Instagram" on that page.
 
 To switch on:
 
