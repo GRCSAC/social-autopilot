@@ -1,13 +1,11 @@
 name: Studio Instagram
 
-# Publishes one GRCSAC Studio card to the studio Instagram account, directly
-# through Meta's Instagram API (no Buffer), Mon/Wed/Fri at 16:00 UTC (11am ET).
-# Run it by hand from the Actions tab: tick "dry_run" to render and print without
-# posting, or "check_only" to just confirm the token and account.
+# PARKED. The studio Instagram is scheduled natively in Meta Business Suite (see
+# STUDIO-SCHEDULING.md), because Meta's API needs a developer account and that
+# needs a Facebook account. This workflow is the direct-API route, kept for the day
+# a token exists: it has no schedule and only runs by hand from the Actions tab.
 
 on:
-  schedule:
-    - cron: "0 16 * * 1,3,5"
   workflow_dispatch:
     inputs:
       dry_run:

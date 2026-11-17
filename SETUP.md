@@ -12,39 +12,16 @@ From here it's hands-off: every Sunday it queues the next week of posts, and Buf
 them on your Mon/Wed/Fri schedule. To change what it posts, edit `content/*.json` (see
 [README.md](README.md)).
 
-### Connecting the GRCSAC Studio Instagram (one-time, pending)
+### The GRCSAC Studio Instagram (@grcsac_studio) - live since 2026-11-16
 
-The studio stream (`content/studio_instagram.json`, workflow `studio.yml`) does not
-use Buffer (its free plan is full). It publishes through Meta's **Instagram API with
-Instagram Login**, which needs a professional Instagram account and a Meta app of
-your own. The workflow fails cleanly ("No token") until the secrets exist.
+Set up on 2026-11-16: professional (Business) profile, category Software Company,
+bio and www.grcsac.com link, business email contact@grcsac.com, no street address
+shown. Posts are scheduled in Meta Business Suite, not Buffer and not the API;
+see [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md) for the why and the how. First
+nine posts run Mon/Wed/Fri 11:00 ET from 18 Nov to 7 Dec 2026.
 
-1. **Make the account professional.** Instagram app, studio account: Settings ->
-   Account type and tools -> Switch to professional account -> Business (Creator also
-   works). Put `https://www.grcsac.com` in the bio link; every caption says "link in bio".
-2. **Create the Meta app.** developers.facebook.com -> My Apps -> Create app -> use
-   case "Other" -> type **Business** -> name it (for example `GRCSAC Studio Autopilot`).
-   On the app dashboard add the **Instagram** product, then open
-   *Instagram -> API setup with Instagram login*.
-3. **Add the account and get a token.** In that panel, step "Generate access tokens":
-   Add account -> log in as the studio Instagram account -> accept. Then
-   **Generate token**, tick the `instagram_business_basic` and
-   `instagram_business_content_publish` scopes, and copy the long-lived token. The
-   app can stay in Development mode: it only ever acts on an account that has a
-   role on the app, which this one now has.
-4. **Make an encryption key** (any machine with Python):
-   `python -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())"`
-5. **Add two GitHub secrets** (repo Settings -> Secrets and variables -> Actions):
-   `IG_STUDIO_TOKEN` = the token from step 3, `IG_STUDIO_TOKEN_KEY` = the key from step 4.
-6. **Verify** from the Actions tab: run *Studio Instagram* with `check_only` ticked.
-   The log should name the studio account. Then run it with `dry_run` ticked to see
-   the card it would post. The next Mon/Wed/Fri 16:00 UTC slot posts for real.
-
-After the first real run the refreshed token lives in `content/ig_studio_token.enc`
-(encrypted with the key) and the `IG_STUDIO_TOKEN` secret is no longer read. If the
-schedule ever stops for 60+ days the token dies: generate a new one (step 3),
-update the secret, and delete the `.enc` file so the bootstrap path runs again.
-Revoking a leaked token: Meta app dashboard -> the same panel -> remove the account.
+The parked API route (`studio.yml`, manual only) would need a Meta app token in
+the `IG_STUDIO_TOKEN` secret; `IG_STUDIO_TOKEN_KEY` is already set and unused.
 
 ### When posts actually appear
 

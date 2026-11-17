@@ -36,8 +36,8 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 | `content/linkedin.json` | Library of LinkedIn text posts |
 | `content/studio_instagram.json` | GRCSAC Studio stream: one card per app or public repo, for the studio's own Instagram (see below) |
 | `studio.py` + `assets/apps/` | Portrait (1080x1350) card renderer for the studio stream, plus every app's icon |
-| `ig_studio.py` + `.github/workflows/studio.yml` | Publishes the studio stream directly through Meta's Instagram API, Mon/Wed/Fri (no Buffer) |
-| `content/ig_studio_token.enc` | The studio account's Instagram token, Fernet-encrypted, refreshed by every run |
+| `studio_queue.py` + `content/studio_schedule.json` | Plans and records the studio posts scheduled in Meta Business Suite (see STUDIO-SCHEDULING.md) |
+| `ig_studio.py` + `.github/workflows/studio.yml` | Parked direct-API publisher for the studio stream (needs a Meta developer token) |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |
 | `generate.py` / `brand.py` | The image renderer + brand system |
@@ -127,19 +127,17 @@ round-robin across apps so one week never shows three cards for the same app.
 Preview: `python studio.py content/studio_instagram.json ig-studio-siftlet-1 -o preview.jpg`
 or `--all -o preview/` for the whole library.
 
-**This stream does not go through Buffer.** Buffer's free plan is full, so
-`ig_studio.py` publishes straight to the studio account through Meta's Instagram
-API (the "Instagram Login" flavour: a professional Instagram account and a Meta
-app, no Facebook Page). `.github/workflows/studio.yml` runs it Mon/Wed/Fri at
-16:00 UTC and publishes one card per run (`config.json` `studio.posts_per_run`),
-on its own cursor (`state.json` `studio_instagram`). Same trick as the rest of
-the repo: the card is committed, jsDelivr serves it, and Meta fetches it by URL.
+**This stream does not go through Buffer** (its free plan is full) **and not
+through Meta's API** (a Meta developer account needs a Facebook account, and there
+is none). It is scheduled in **Meta Business Suite**, signed in with the studio
+Instagram account, three weeks ahead, Mon/Wed/Fri at 11:00 Eastern. `studio_queue.py`
+decides which card goes on which date and keeps the ledger in
+`content/studio_schedule.json`; the procedure is in
+[STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
 
-The 60-day Meta token is refreshed on every run and written back, encrypted with
-a Fernet key held in GitHub secrets, to `content/ig_studio_token.enc`, so it never
-ages out while the schedule keeps running. Setup steps are in
-[SETUP.md](SETUP.md); `python ig_studio.py check` tells you which account the
-token belongs to and when it expires.
+`ig_studio.py` and `.github/workflows/studio.yml` are the direct-API publisher,
+built and tested but parked: the workflow has no schedule. They become usable the
+day a Meta developer token exists.
 
 House rules for new studio items: plain founder voice, second person, no em or
 en dashes, straight quotes, no emoji, at most six hashtags, and nothing an app

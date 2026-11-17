@@ -1,0 +1,61 @@
+{
+ "route": "Meta Business Suite native scheduler (business.facebook.com), account @grcsac_studio",
+ "slot": "Mon/Wed/Fri 11:00 America/New_York",
+ "next_cursor": 9,
+ "scheduled": [
+  {
+   "id": "ig-studio-grcsac-1",
+   "date": "2026-11-18",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-inthezone-1",
+   "date": "2026-11-20",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-siftlet-1",
+   "date": "2026-11-23",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-nextfix-1",
+   "date": "2026-11-25",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-pavlove-1",
+   "date": "2026-11-27",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-iw-1",
+   "date": "2026-11-30",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-findr-1",
+   "date": "2026-12-02",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-fitthis-1",
+   "date": "2026-12-04",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  },
+  {
+   "id": "ig-studio-sunkcost-1",
+   "date": "2026-12-07",
+   "time": "11:00",
+   "scheduled_on": "2026-11-16"
+  }
+ ]
+}
