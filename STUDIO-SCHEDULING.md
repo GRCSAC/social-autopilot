@@ -128,6 +128,14 @@ with Instagram login" is not available for newer apps. The difference matters:
   carousels, one icon card, one generated Reel) as far as Meta accepting them.
   All ten were accepted. Containers left unpublished expire on their own.
 
+**2026-11-18: the token stopped working.** `check_only` failed twice (16:27Z and
+16:31Z) with `API access blocked. (code 200, subcode 5258005)` from
+graph.facebook.com. The same token passed every check on 2026-11-17. Nothing in the
+repo changed in between. A blocked check stops the run before anything is rendered
+or posted, so a scheduled run fails safely. Cause not yet known; the developer
+dashboard has to be read under the Facebook login. Posts scheduled in Business
+Suite are not affected: the 18 Nov post went out and the other eight are in place.
+
 **The one step never run is the final publish call**, because it posts at once. The
 first scheduled run on 2026-12-09 is the first real one.
 
@@ -214,8 +222,10 @@ needs to change, and enabling it again resumes from the same cursor.
 Getting in: with a Facebook account signed in to the same browser, Business Suite
 shows "Unable to access Meta Business Suite with this account". Click **Log in
 with Instagram** on that page. It opens Business Suite as @grcsac_studio in a new
-tab and does not sign Facebook out; the developer site then offers "Go to WWW" to
-switch back to the Facebook account.
+tab. The developer site then shows "Go to WWW" in place of the app dashboard.
+On 2026-11-18, the day after this was first done, facebook.com in the same browser
+was at its sign-in screen, so expect to sign in to Facebook again before using the
+developer dashboard. Whether the Instagram login caused that is not established.
 
 Swapping the image of a scheduled post (done on 2026-11-17 for the 23 Nov Siftlet
 card, whose platform line wrongly said "iPhone + Android"): the row's `...` menu
