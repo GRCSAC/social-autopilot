@@ -96,8 +96,10 @@ def _call(method, path, params=None, token=None, api=API_IG):
         body = e.read().decode(errors="replace")
         try:
             msg = json.loads(body)["error"]
+            said = " ".join(str(msg[k]) for k in ("error_user_title", "error_user_msg") if msg.get(k))
             raise RuntimeError(f"Instagram API {e.code}: {msg.get('message')} "
-                               f"(code {msg.get('code')}, subcode {msg.get('error_subcode')})")
+                               f"(code {msg.get('code')}, subcode {msg.get('error_subcode')}, "
+                               f"type {msg.get('type')})" + (f" Meta says: {said}" if said else ""))
         except (ValueError, KeyError):
             raise RuntimeError(f"Instagram API {e.code}: {body[:400]}")
 
@@ -170,6 +172,23 @@ def refresh_token(rec):
 
 
 # ------------------------------------------------------------------ commands
+def _diagnose(token, uid):
+    """The Facebook-login API refused the token. Ask a few read-only questions
+    to see how far the refusal reaches. Prints outcomes only, never ids."""
+    probes = [("the token itself (who am I)", "me", {"fields": "id"}),
+              ("the app behind the token", "app", {"fields": "id"}),
+              ("Instagram accounts the token can reach", "me/instagram_accounts", {"fields": "id"}),
+              ("the Instagram account, id only", uid, {"fields": "id"}),
+              ("the Instagram account's posts", f"{uid}/media", {"limit": 1})]
+    print("diagnosis (read-only):")
+    for label, path, params in probes:
+        try:
+            _call("GET", path, params, token, API_FB)
+            print(f"  ok       {label}")
+        except RuntimeError as e:
+            print(f"  REFUSED  {label}: {e}")
+
+
 def resolve(token):
     """Find out which API the token belongs to and which account it posts as.
     Returns {kind, api, id, username}."""
@@ -186,6 +205,7 @@ def resolve(token):
     try:
         me = _call("GET", uid, {"fields": "id,username"}, token, API_FB)
     except RuntimeError as fb_err:
+        _diagnose(token, uid)
         raise RuntimeError(f"token rejected by both APIs. graph.instagram.com: {ig_err}. "
                            f"graph.facebook.com: {fb_err}")
     return {"kind": "facebook", "api": API_FB, "id": me["id"],
