@@ -30,6 +30,10 @@ on:
         description: "Item ids, comma separated: render, host and have Meta accept them, publish nothing"
         type: string
         default: ""
+      health_only:
+        description: "Only report whether Meta's API accepts the token (never fails, publishes nothing)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -62,20 +66,24 @@ jobs:
         id: gate
         run: python ig_studio.py gate
 
+      - name: Health (is the API accepting the token)
+        if: ${{ inputs.health_only }}
+        run: python ig_studio.py health
+
       - name: Check token and account
-        if: ${{ steps.gate.outputs.go == 'true' && env.DRY_RUN != '1' }}
+        if: ${{ steps.gate.outputs.go == 'true' && env.DRY_RUN != '1' && !inputs.health_only }}
         run: python ig_studio.py check
 
       - name: Probe (Meta fetches the media, nothing is published)
-        if: ${{ steps.gate.outputs.go == 'true' && inputs.probe }}
+        if: ${{ steps.gate.outputs.go == 'true' && inputs.probe && !inputs.health_only }}
         run: python ig_studio.py probe
 
       - name: Render the next post
-        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe }}
+        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe && !inputs.health_only }}
         run: python ig_studio.py build
 
       - name: Publish image (commit -> jsDelivr serves it)
-        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe }}
+        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe && !inputs.health_only }}
         run: |
           git config user.name  "social-autopilot[bot]"
           git config user.email "autopilot@users.noreply.github.com"
@@ -89,7 +97,7 @@ jobs:
           fi
 
       - name: Post to Instagram
-        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe }}
+        if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe && !inputs.health_only }}
         run: python ig_studio.py publish
 
       - name: Save cursor, ledger and refreshed token

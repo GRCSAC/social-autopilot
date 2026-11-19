@@ -66,6 +66,8 @@ CARDS = ROOT / "public" / "cards"
 VIDEO = ROOT / "public" / "video"
 LEDGER = ROOT / "content" / "studio_schedule.json"
 ONCE_DONE = "studio_once_done"
+AHEAD = "studio_posted_ahead"   # posted by the fallback before the cursor reached them
+QUEUE = ROOT / "preview" / "queue"
 SLOT_DAYS = {0, 2, 4}           # Mon, Wed, Fri
 SLOT_HOUR = 11                  # America/New_York
 BATCH = ROOT / "_studio_batch.json"
@@ -315,6 +317,7 @@ def build():
     state = json.loads(STATE.read_text(encoding="utf-8"))
     cur = state.get(CURSOR, 0)
     done = list(state.get(ONCE_DONE, []))
+    ahead = list(state.get(AHEAD, []))
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
     CARDS.mkdir(parents=True, exist_ok=True)
     items, looked = [], 0
@@ -343,6 +346,9 @@ def build():
         it = lib[cur % len(lib)]
         cur += 1
         looked += 1
+        if it["id"] in ahead:
+            ahead.remove(it["id"])        # the fallback already posted it
+            continue
         if it.get("once") and it["id"] in done:
             continue                      # a one-time post that already ran
         items.append(one(it))
@@ -353,6 +359,8 @@ def build():
         next_state[CURSOR] = cur % len(lib)
         if done:
             next_state[ONCE_DONE] = done
+        if ahead or AHEAD in state:
+            next_state[AHEAD] = ahead
     BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
     print(f"Built studio batch: {len(items)} post(s)")
     for it in items:
@@ -534,6 +542,124 @@ def publish():
     print(f"cursor advanced: {CURSOR} = {batch['next_state'][CURSOR]}")
 
 
+# ------------------------------------------------------------------ fallback
+# When Meta's API refuses the token, the post still has to go out. The same
+# library is then scheduled in Meta Business Suite by browser (the laptop
+# routine in STUDIO-SCHEDULING.md). These commands are the deterministic half
+# of that: is the API healthy, which posts cover which free dates, and
+# recording what was scheduled so the API never posts on those dates as well.
+def health():
+    """One line for the fallback routine to read. Never fails the run, so a
+    blocked token does not send a failure email every morning."""
+    try:
+        rec = load_token()
+        acct = resolve(rec["token"])
+        _call("GET", f"{acct['id']}/content_publishing_limit", {"fields": "quota_usage"},
+              rec["token"], acct["api"])
+        print(f"health: ok (@{acct['username']} may publish)")
+    except (Exception, SystemExit) as e:
+        print(f"health: BLOCKED ({e})")
+
+
+def _free_slots(days):
+    """Slot dates from today through today+days that have no post yet."""
+    from zoneinfo import ZoneInfo
+    now = datetime.now(ZoneInfo("America/New_York"))
+    start = CONFIG.get("studio", {}).get("api_start", "")
+    taken = {r["date"] for r in json.loads(LEDGER.read_text(encoding="utf-8"))["scheduled"]}
+    out = []
+    for i in range(days + 1):
+        d = now.date() + timedelta(days=i)
+        iso = d.isoformat()
+        if d.weekday() not in SLOT_DAYS or iso in taken or (start and iso < start):
+            continue
+        if i == 0 and now.hour >= SLOT_HOUR - 1:
+            continue                      # too late to schedule today's 11:00
+        out.append(d)
+    return out
+
+
+def _next_images(state, lib, n):
+    """The next n items the fallback can post: images only (video waits for
+    the API), in library order from the cursor, nothing posted before."""
+    cur = state.get(CURSOR, 0)
+    done, ahead = set(state.get(ONCE_DONE, [])), set(state.get(AHEAD, []))
+    out = []
+    for i in range(len(lib)):
+        if len(out) >= n:
+            break
+        it = lib[(cur + i) % len(lib)]
+        if it.get("video") or it["id"] in ahead or (it.get("once") and it["id"] in done):
+            continue
+        out.append(it)
+    return out
+
+
+def handoff(days=7):
+    """Print, as JSON, the posts to schedule in Business Suite for the free
+    slots of the next `days` days, with their rendered images. Changes nothing."""
+    import studio
+    lib = _load_lib()
+    state = json.loads(STATE.read_text(encoding="utf-8"))
+    slots = _free_slots(days)
+    rows = []
+    QUEUE.mkdir(parents=True, exist_ok=True)
+    for d, it in zip(slots, _next_images(state, lib, len(slots))):
+        specs = studio.slides_of(it)
+        files = []
+        for i, sp in enumerate(specs, 1):
+            tail = f"-{i}" if len(specs) > 1 else ""
+            f = QUEUE / f"{d.isoformat()}-{it['id']}{tail}.jpg"
+            studio.render(sp, f)
+            files.append(str(f))
+        rows.append({"id": it["id"], "date_iso": d.isoformat(),
+                     "type_date": d.strftime("%m/%d/%Y"),
+                     "want_date": f"{d.strftime('%b')} {d.day}, {d.year}",
+                     "time": "11:00 AM", "files": files, "app": it.get("app", ""),
+                     "status_on_card": it.get("status", ""), "caption": it["caption"]})
+    print(json.dumps(rows, indent=1, ensure_ascii=False))
+
+
+def handoff_done(pid, d):
+    """Record one post as scheduled in Business Suite on date d."""
+    from zoneinfo import ZoneInfo
+    datetime.strptime(d, "%Y-%m-%d")
+    lib = _load_lib()
+    ids = [it["id"] for it in lib]
+    state = json.loads(STATE.read_text(encoding="utf-8"))
+    led = json.loads(LEDGER.read_text(encoding="utf-8"))
+    if pid not in [it["id"] for it in _next_images(state, lib, len(lib))]:
+        raise SystemExit(f"refusing: {pid} is not an image item still waiting to be posted")
+    if any(r["date"] == d for r in led["scheduled"]):
+        raise SystemExit(f"refusing: {d} already has a post in the ledger")
+    it = lib[ids.index(pid)]
+    ahead = list(state.get(AHEAD, [])) + [pid]
+    cur = state.get(CURSOR, 0)
+    while lib[cur % len(lib)]["id"] in ahead:     # the cursor itself was posted: move on
+        ahead.remove(lib[cur % len(lib)]["id"])
+        cur += 1
+    state[CURSOR], state[AHEAD] = cur % len(lib), ahead
+    if it.get("once"):
+        state[ONCE_DONE] = list(state.get(ONCE_DONE, [])) + [pid]
+    today = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+    led["scheduled"].append({"id": pid, "date": d, "time": f"{SLOT_HOUR}:00",
+                             "scheduled_on": today, "via": "business-suite"})
+    led["scheduled"].sort(key=lambda r: r["date"])
+    led["next_cursor"] = state[CURSOR]
+    STATE.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+    LEDGER.write_text(json.dumps(led, indent=1) + "\n", encoding="utf-8")
+    print(f"recorded {pid} on {d} (Business Suite); cursor {state[CURSOR]}, "
+          f"posted ahead of the cursor: {', '.join(ahead) or 'none'}")
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "check"
-    {"check": check, "gate": gate, "build": build, "publish": publish, "probe": probe}[cmd]()
+    if cmd == "handoff":
+        handoff(int(sys.argv[2]) if len(sys.argv) > 2 else 7)
+    elif cmd == "handoff-done":
+        if len(sys.argv) != 4:
+            raise SystemExit("usage: python ig_studio.py handoff-done ID YYYY-MM-DD")
+        handoff_done(sys.argv[2], sys.argv[3])
+    else:
+        {"check": check, "gate": gate, "build": build, "publish": publish,
+         "probe": probe, "health": health}[cmd]()
