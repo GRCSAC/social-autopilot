@@ -6,6 +6,10 @@ How @grcsac_studio gets its posts.
   2026-11-16. Meta publishes them; nothing in this repo has to run.
 - **From 9 Dec 2026:** `.github/workflows/studio.yml` posts through Meta's API,
   Mon/Wed/Fri at 11:00 Eastern, with no browser involved. See "The API route".
+- **When Meta's API refuses the token** (it has since 2026-11-18): a daily routine
+  on the laptop schedules the coming week's posts in Meta Business Suite instead
+  and records them here, so the API never posts on those dates as well. See "The
+  safety net". The 9 Dec post was scheduled this way on 2026-11-19.
 
 ## Why this route
 
@@ -14,7 +18,7 @@ How @grcsac_studio gets its posts.
 | Buffer | Free plan is full (three channels). Not used for this account. |
 | Meta's Instagram API (`ig_studio.py`, `studio.yml`) | **The route from 2026-12-09.** It was blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists. Token checked, all media accepted by Meta in a rehearsal. |
 | Instagram's own web composer | Uploads fine, but offers only Share now. No schedule control. |
-| Meta Business Suite (business.facebook.com) | Works, and carried the first nine posts. "Continue with Instagram" signs in with the studio account, no Facebook needed. Its composer has "Set date and time". Retired once those nine have run: it needs a browser, and signing in to Facebook in the same browser locks it out. |
+| Meta Business Suite (business.facebook.com) | Works, and carried the first nine posts. "Continue with Instagram" signs in with the studio account, no Facebook needed. Its composer has "Set date and time". Now the safety net for when the API is refused: it needs a browser, so it is not the first choice. |
 
 The first nine posts were scheduled in Meta's own tool, in a browser signed in as
 @grcsac_studio. Everything after them is published by the workflow. Either way
@@ -23,31 +27,52 @@ this repo decides which post goes on which date and keeps the ledger.
 ## The moving parts
 
 - `content/studio_instagram.json` — the 33 cards (see README).
-- `studio_queue.py` — `status`, `plan --weeks N` (renders the next cards into
-  `preview/queue/` and prints each one's date, caption and file), `done ID DATE`
-  (records it and advances the cursor).
+- `ig_studio.py` — the API route (`check`, `gate`, `build`, `publish`, `probe`)
+  and the safety net's commands (`health`, `handoff N`, `handoff-done ID DATE`).
+- `studio_queue.py` — `status` shows the ledger. Its `plan` and `done` are the
+  2026-11-16 planner, superseded by `ig_studio.py handoff`; do not use them.
 - `content/studio_schedule.json` — the ledger: every post scheduled, and
   `next_cursor`. `content/state.json` `studio_instagram` mirrors the cursor.
 - Slots: **Mon/Wed/Fri 11:00 America/New_York**, three weeks ahead at most, so a
   card's status line ("Coming soon", a price) is never queued long before it runs.
 
-## Topping up in Business Suite (retired 2026-11-17)
+## The safety net (since 2026-11-19)
 
-Kept for reference only. The Monday routine that did this is paused and must stay
-paused while the API schedule is on, or posts will double. Video items in the
-library cannot be scheduled this way.
+Meta can refuse the API token without warning; it did on 2026-11-18, a day after
+the token passed every check. Posting must not depend on that, so a scheduled
+task on the laptop (`grcsac-studio-instagram-topup`, every day at about 09:30
+Eastern, in Claude's desktop app) does this:
 
-1. `git pull`, then `python studio_queue.py plan --weeks 3`. No output rows means
-   the queue is already full.
-2. For each row, **check the card is still true**: its `status_on_card` against the
-   tile on www.grcsac.com, and any price in the caption against the app's site. If
-   something changed, fix the card in the JSON first and re-run `plan`.
-3. Open `https://business.facebook.com/latest/composer/` signed in as
-   @grcsac_studio (Home -> Create post). For each row: add the image, paste the
-   caption, turn on **Set date and time**, set the date and 11:00 AM, **Schedule**.
-4. Confirm it under Content -> Posts & reels -> **Scheduled** (one row per date),
-   then `python studio_queue.py done <id> <YYYY-MM-DD>`.
-5. Commit `content/studio_schedule.json` and `content/state.json`, push.
+1. `python ig_studio.py handoff 7` lists the Mon/Wed/Fri dates in the next seven
+   days that have no post in the ledger, each with the next image item from the
+   library, rendered into `preview/queue/`. An empty list ends the run.
+2. It starts the workflow with `health_only`, which prints `health: ok` or
+   `health: BLOCKED (...)` and never fails, so a refused token does not send a
+   failure email every morning. `ok` ends the run: the API will post.
+3. If blocked, it schedules each listed post in Business Suite for 11:00 AM, in
+   Chrome signed in as @grcsac_studio, checks the Scheduled list, and runs
+   `python ig_studio.py handoff-done ID DATE`, then commits and pushes
+   `content/state.json` and `content/studio_schedule.json`.
+
+What that does to the queue:
+
+- The fallback posts images only: cards, screenshot cards and carousels (a
+  carousel is its slides uploaded together in one go). Reels stay in the
+  library for the API.
+- An item posted ahead of the cursor is listed in `content/state.json` under
+  `studio_posted_ahead`. `ig_studio.py build` skips it when the cursor reaches
+  it, and `handoff` never offers it twice.
+- The date goes into the ledger with `"via": "business-suite"`. The gate skips
+  any date in the ledger, so the API cannot post there as well. When the API
+  works again it simply takes the next free date.
+
+What it depends on: the laptop awake at 09:30 with Chrome open, and Instagram
+signed in as @grcsac_studio in that Chrome. Because it looks a week ahead and
+runs daily, one missed morning costs nothing.
+
+If a scheduled API run fails at 11:00 on a day the routine thought the API was
+healthy, that day's post is missed and GitHub emails the failure. The next
+morning's run covers the following dates.
 
 ## Notes for driving it with browser automation
 
@@ -74,6 +99,15 @@ Learned the hard way on 2026-11-16; the composer is not automation-friendly.
   trouble completing your request" underneath. The post is scheduled anyway. Do not
   click again; check the Scheduled list.
 - A fresh composer needs about ten seconds before its buttons exist.
+- **Carousel:** the file input takes several files; set all the slides on it in
+  one go, in order. The media list then shows one `1080 x 1350` row per slide.
+- After the caption is pasted a hashtag suggestion list opens; press Escape.
+- **Leaving the composer hangs the tab** on Chrome's "Leave site?" prompt, which
+  automation cannot answer. Before navigating away or closing, run
+  `window.addEventListener('beforeunload', e => e.stopImmediatePropagation(), true)`
+  in the page. A tab already stuck on the prompt cannot be rescued this way.
+- Use the composer and Scheduled-list addresses with the current portfolio's
+  `business_id`; the routine's instructions carry them.
 
 ## The API route (switched on 2026-11-17, first post 2026-12-09)
 
@@ -132,8 +166,13 @@ with Instagram login" is not available for newer apps. The difference matters:
 16:31Z) with `API access blocked. (code 200, subcode 5258005)` from
 graph.facebook.com. The same token passed every check on 2026-11-17. Nothing in the
 repo changed in between. A blocked check stops the run before anything is rendered
-or posted, so a scheduled run fails safely. Cause not yet known; the developer
-dashboard has to be read under the Facebook login. Posts scheduled in Business
+or posted, so a scheduled run fails safely. On 2026-11-19 the check was taught
+to ask five read-only questions when refused: every one is refused, including
+"who am I" and "which app", so the block is on the token, the app or the
+portfolio, not on the Instagram account. Cause not yet known; the developer
+dashboard has to be read under the Facebook login, and that login would not hold
+in the Chrome that also holds the Instagram login for Business Suite. Until it
+is lifted the safety net above carries the posts. Posts scheduled in Business
 Suite are not affected: the 18 Nov post went out and the other eight are in place.
 
 **The one step never run is the final publish call**, because it posts at once. The

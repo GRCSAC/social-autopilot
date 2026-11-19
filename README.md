@@ -37,7 +37,7 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 | `content/studio_instagram.json` | GRCSAC Studio stream: cards and short videos per app or public repo, for the studio's own Instagram (see below) |
 | `studio.py` + `assets/apps/` + `assets/shots/` | Portrait (1080x1350) card renderer for the studio stream: typographic cards, screenshot cards and carousel slides, plus every app's icon and the store screenshots used |
 | `tools/make_meter_reel.py` | Renders the animated Sunk Cost meter Reel (Pillow + ffmpeg, run on a laptop) |
-| `studio_queue.py` + `content/studio_schedule.json` | The ledger of every studio post by date, and the retired planner for Meta Business Suite (see STUDIO-SCHEDULING.md) |
+| `studio_queue.py` + `content/studio_schedule.json` | The ledger of every studio post by date. `status` reads it; the planner in this file is superseded by `ig_studio.py handoff`, the safety net that schedules in Meta Business Suite when the API refuses the token (see STUDIO-SCHEDULING.md) |
 | `ig_studio.py` + `.github/workflows/studio.yml` + `public/video/` | Publishes the studio stream through Meta's API, Mon/Wed/Fri from 2026-12-09: rendered cards and Reels |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |

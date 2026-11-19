@@ -3,7 +3,9 @@
 RETIRED for planning on 2026-11-17: from 2026-12-09 the account is published by
 ig_studio.py through Meta's API (see STUDIO-SCHEDULING.md), which writes its
 posts into the same ledger. `status` is still the quickest look at the ledger.
-`plan` and `done` are kept for reference and know nothing about video items.
+`plan` and `done` are kept for reference and know nothing about video items,
+carousels or posts made ahead of the cursor. The Business Suite fallback now
+uses `python ig_studio.py handoff` and `handoff-done` instead.
 
 The studio account is scheduled by hand-driven browser steps (see
 STUDIO-SCHEDULING.md), not by an API. This script is the deterministic half:
