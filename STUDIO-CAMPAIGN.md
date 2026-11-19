@@ -2,8 +2,8 @@
 
 Written 2026-11-16. The studio Instagram account exists; the posting pipeline for it
 is in this repo (`content/studio_instagram.json`, `studio.py`, `ig_studio.py`). It has
-been live since 2026-11-16: the first nine posts were scheduled in Meta Business
-Suite, and from 2026-12-09 the repo posts through Meta's API
+been live since 2026-11-16: the first posts were scheduled in Meta Business
+Suite, and since 2026-11-20 the repo posts through Meta's API twice a day
 ([STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md)).
 
 ## What it is for
@@ -16,19 +16,17 @@ after seeing one app and discovers the other ten, and to make the studio's stanc
 
 ## Cadence
 
-- 3 posts a week, Mon/Wed/Fri at 11:00 Eastern. Buffer is not involved (its free
-  plan is full). Through 7 Dec 2026 the posts sit in Meta Business Suite; from
-  9 Dec a GitHub Actions workflow publishes them through Meta's API.
-- The library has 50 items across 13 subjects, laid out so a week never repeats
-  an app: 33 typographic cards, seven App Store clips that each run once, and
-  ten posts added on 2026-11-17 that are built from the apps' own screens (five
+- **Two posts a day, every day, at 11:00 and 19:00 Eastern** (the owner's call on
+  2026-11-19; it was three a week before). Buffer is not involved.
+- **No post is ever repeated.** An item goes out once. The library therefore has
+  to grow by fourteen items a week; a scheduled session writes them by the
+  rules in [STUDIO-CONTENT.md](STUDIO-CONTENT.md), and when there is nothing new
+  and true to say the account posts less rather than repeat or pad.
+- The library began with 50 items across 13 subjects: 33 typographic cards,
+  seven App Store clips, and ten posts built from the apps' own screens (five
   screenshot cards, three swipeable carousels, one Android round-up, one
-  animated Reel). One full cycle is about 16 weeks; after that it repeats, which
-  is fine on Instagram, and new items are added as apps ship.
-- From 9 Dec 2026 a typical week is one App Store clip, one screenshot post and
-  one card, until the clips run out on 11 Jan 2027.
-- No paid promotion, no follower goals, no posting on a day there is nothing true
-  to say. Measure at 90 days, not before.
+  animated Reel).
+- No paid promotion and no follower goals. Measure at 90 days, not before.
 
 ## Content pillars
 
@@ -51,10 +49,9 @@ are taken from the grcsac.com tiles and must be updated when a tile changes.
 
 - **An app ships or changes price:** edit its cards in the JSON (status, price,
   platform), re-render with `python studio.py ... --all`, check the preview, push.
-  Append new cards rather than reordering; the cursor only tolerates reordering
-  when it sits at 0.
+  Only items that have not been posted can be edited; the ledger is history.
 - **A new app appears on grcsac.com:** add its icon to `assets/apps/`, its accent
-  to `studio.py`, and two or three cards. Slot them into the interleave by hand.
+  to `studio.py`, and two or three cards at the end of the library.
 - **Android:** only Findr, Sunk Cost and Infinite Worlds are on Google Play today.
   Siftlet's site says Android is next; do not call it available until its tile
   and site say so. When another app reaches Google Play, add it to the round-up
@@ -62,9 +59,9 @@ are taken from the grcsac.com tiles and must be updated when a tile changes.
 - **Third-party art:** Findr's store screenshots show film posters and actors.
   The posts here use its taste chart instead, which shows neither.
 - **Video:** the pipeline posts Reels as well as cards. Put a 1080x1920 MP4 under
-  20 MB in `public/video/`, add an item with `"video"` and a caption after the
-  cursor, and run the workflow's `probe` to confirm Meta accepts it. Mark a clip
-  `"once": true` if it carries a date or a claim that will age. There is no
+  20 MB in `public/video/`, add an item with `"video"` and a caption to the
+  library, and run the workflow's `probe` to confirm Meta accepts it. Every item
+  runs once, so a dated clip cannot come round again. There is no
   original footage yet; the capture list in the In The Zone marketing docs is
   the model for it.
 

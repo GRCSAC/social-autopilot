@@ -2,39 +2,70 @@
 
 How @grcsac_studio gets its posts.
 
-- **18 Nov to 7 Dec 2026:** nine posts scheduled by hand in Meta Business Suite on
-  2026-11-16. Meta publishes them; nothing in this repo has to run.
-- **From 9 Dec 2026:** `.github/workflows/studio.yml` posts through Meta's API,
-  Mon/Wed/Fri at 11:00 Eastern, with no browser involved. See "The API route".
-- **When Meta's API refuses the token** (it did from 2026-11-18 to 2026-11-19): a daily routine
-  on the laptop schedules the coming week's posts in Meta Business Suite instead
-  and records them here, so the API never posts on those dates as well. See "The
-  safety net". The 9 Dec post was scheduled this way on 2026-11-19.
+**Since 2026-11-20 the account posts twice a day, every day, at 11:00 and 19:00
+Eastern, and never posts the same item twice.**
+
+- `.github/workflows/studio.yml` publishes through Meta's API, with no browser
+  involved. See "The API route".
+- Ten 11:00 slots between 18 Nov and 9 Dec 2026 hold posts that were scheduled
+  by hand in Meta Business Suite before the API route started. Meta publishes
+  those; the workflow sees them in the ledger and fills only the other slot on
+  those days.
+- **No repeats:** `content/studio_schedule.json` is the whole history of the
+  account. The next post is always the first library item whose id is not in
+  it. When every item has been posted, nothing is posted until new items are
+  added. A scheduled session adds them; see "Keeping the library full".
+- **When Meta's API refuses the token** (it did from 2026-11-18 to 2026-11-19),
+  a daily routine on the laptop schedules the next days' posts in Meta Business
+  Suite instead and records them, so the API never fills those slots as well.
+  See "The safety net".
 
 ## Why this route
 
 | Route | Verdict |
 |---|---|
 | Buffer | Free plan is full (three channels). Not used for this account. |
-| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | **The route from 2026-12-09.** It was blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists. Token checked, all media accepted by Meta in a rehearsal. |
+| Meta's Instagram API (`ig_studio.py`, `studio.yml`) | **The route, from 2026-11-20.** It was blocked until 2026-11-17 because a Meta developer account needs a Facebook account; one now exists. Token checked, all media accepted by Meta in a rehearsal. |
 | Instagram's own web composer | Uploads fine, but offers only Share now. No schedule control. |
 | Meta Business Suite (business.facebook.com) | Works, and carried the first nine posts. "Continue with Instagram" signs in with the studio account, no Facebook needed. Its composer has "Set date and time". Now the safety net for when the API is refused: it needs a browser, so it is not the first choice. |
 
-The first nine posts were scheduled in Meta's own tool, in a browser signed in as
-@grcsac_studio. Everything after them is published by the workflow. Either way
-this repo decides which post goes on which date and keeps the ledger.
+The first posts were scheduled in Meta's own tool, in a browser signed in as
+@grcsac_studio. Everything else is published by the workflow. Either way this
+repo decides which post goes in which slot and keeps the ledger.
 
 ## The moving parts
 
-- `content/studio_instagram.json` — the 33 cards (see README).
-- `ig_studio.py` — the API route (`check`, `gate`, `build`, `publish`, `probe`)
-  and the safety net's commands (`health`, `handoff N`, `handoff-done ID DATE`).
-- `studio_queue.py` — `status` shows the ledger. Its `plan` and `done` are the
-  2026-11-16 planner, superseded by `ig_studio.py handoff`; do not use them.
-- `content/studio_schedule.json` — the ledger: every post scheduled, and
-  `next_cursor`. `content/state.json` `studio_instagram` mirrors the cursor.
-- Slots: **Mon/Wed/Fri 11:00 America/New_York**, three weeks ahead at most, so a
-  card's status line ("Coming soon", a price) is never queued long before it runs.
+- `content/studio_instagram.json` — the library: every post, written ahead of
+  time (see README and [STUDIO-CONTENT.md](STUDIO-CONTENT.md)).
+- `ig_studio.py` — the API route (`check`, `gate`, `build`, `publish`, `probe`),
+  the safety net's commands (`health`, `handoff N`, `handoff-done ID DATE SLOT`)
+  and the library's (`stock`, `lint`, `angles`).
+- `studio_queue.py status` — the ledger from today on, and what is waiting.
+- `content/studio_schedule.json` — the ledger: every post ever scheduled or
+  published, with its date and slot. An id in it is never posted again.
+- `content/state.json` `studio_failed` — how often Meta refused a waiting item;
+  after three refusals the item is set aside and the queue moves on.
+- Slots: **11:00 and 19:00 America/New_York, every day.**
+
+## Keeping the library full
+
+Two posts a day with no repeats uses fourteen items a week. A scheduled task in
+Claude's desktop app on the laptop (`grcsac-studio-content`, Monday and Thursday
+mornings) keeps at least three weeks of posts waiting:
+
+1. `python ig_studio.py stock` says how many items are waiting and how many days
+   they cover. Twenty-one days or more ends the run.
+2. Otherwise it writes new items by the rules in
+   [STUDIO-CONTENT.md](STUDIO-CONTENT.md): every claim read from the app's own
+   page that day, and a point no earlier item makes
+   (`python ig_studio.py angles <app>` lists what has been said).
+3. `python ig_studio.py lint` must pass, every new card is rendered and looked
+   at, and only then is the library committed and pushed.
+
+When an app has nothing new and true left to say, the routine adds nothing for
+it. If the whole library runs dry the workflow skips its slots and shows a
+warning on the run; it does not fall back to repeating. New screenshots in
+`assets/shots/` and clips in `public/video/` are what give it more to say.
 
 ## The safety net (since 2026-11-19)
 
@@ -43,36 +74,33 @@ the token passed every check. Posting must not depend on that, so a scheduled
 task on the laptop (`grcsac-studio-instagram-topup`, every day at about 09:30
 Eastern, in Claude's desktop app) does this:
 
-1. `python ig_studio.py handoff 7` lists the Mon/Wed/Fri dates in the next seven
-   days that have no post in the ledger, each with the next image item from the
-   library, rendered into `preview/queue/`. An empty list ends the run.
+1. `python ig_studio.py handoff 3` lists the slots from now through three days
+   ahead that have no post in the ledger, each with the next image item from
+   the library, rendered into `preview/queue/`. An empty list ends the run.
 2. It starts the workflow with `health_only`, which prints `health: ok` or
    `health: BLOCKED (...)` and never fails, so a refused token does not send a
    failure email every morning. `ok` ends the run: the API will post.
-3. If blocked, it schedules each listed post in Business Suite for 11:00 AM, in
-   Chrome signed in as @grcsac_studio, checks the Scheduled list, and runs
-   `python ig_studio.py handoff-done ID DATE`, then commits and pushes
-   `content/state.json` and `content/studio_schedule.json`.
+3. If blocked, it schedules each listed post in Business Suite for its slot
+   (11:00 AM or 7:00 PM), in Chrome signed in as @grcsac_studio, checks the
+   Scheduled list, and runs `python ig_studio.py handoff-done ID DATE SLOT`,
+   then commits and pushes `content/studio_schedule.json`.
 
 What that does to the queue:
 
 - The fallback posts images only: cards, screenshot cards and carousels (a
   carousel is its slides uploaded together in one go). Reels stay in the
   library for the API.
-- An item posted ahead of the cursor is listed in `content/state.json` under
-  `studio_posted_ahead`. `ig_studio.py build` skips it when the cursor reaches
-  it, and `handoff` never offers it twice.
-- The date goes into the ledger with `"via": "business-suite"`. The gate skips
-  any date in the ledger, so the API cannot post there as well. When the API
-  works again it simply takes the next free date.
+- The slot goes into the ledger with `"via": "business-suite"`. The gate skips
+  any slot in the ledger and no id in the ledger is posted again, so the API
+  cannot double up. When the API works again it takes the next free slot.
 
 What it depends on: the laptop awake at 09:30 with Chrome open, and Instagram
-signed in as @grcsac_studio in that Chrome. Because it looks a week ahead and
-runs daily, one missed morning costs nothing.
+signed in as @grcsac_studio in that Chrome. Because it looks three days ahead
+and runs daily, one missed morning costs nothing.
 
-If a scheduled API run fails at 11:00 on a day the routine thought the API was
-healthy, that day's post is missed and GitHub emails the failure. The next
-morning's run covers the following dates.
+If the API is refused between two morning checks, that day's API slots are
+missed and GitHub emails the failures. The next morning's run covers the
+following days.
 
 ## Notes for driving it with browser automation
 
@@ -109,7 +137,7 @@ Learned the hard way on 2026-11-16; the composer is not automation-friendly.
 - Use the composer and Scheduled-list addresses with the current portfolio's
   `business_id`; the routine's instructions carry them.
 
-## The API route (switched on 2026-11-17, first post 2026-12-09)
+## The API route (switched on 2026-11-17, first post 2026-11-20)
 
 What exists on Meta's side, so nobody repeats it:
 
@@ -185,8 +213,7 @@ developers.facebook.com under the owner's Facebook login first. Posts scheduled 
 Suite are not affected: the 18 Nov post went out and the other eight are in place.
 
 **The one step never run is the final publish call**, because it posts at once. The
-first scheduled API run is the first real one: Fri 2026-12-11, because 9 Dec was
-scheduled in Business Suite while the API was blocked and the gate skips it.
+first scheduled API run is the first real one: 19:00 on Fri 2026-11-20.
 
 **Generate token** opens a Facebook approval window (`facebook.com/.../dialog/oauth`)
 in a new browser window. That window is the account owner's to complete: browser
@@ -202,21 +229,30 @@ cancelling a post scheduled in Business Suite". All nine were checked on
 
 ### How the schedule runs
 
-- The workflow fires Mon/Wed/Fri at 15:00 and 16:00 UTC. One of the two is 11:00
-  in New York (16:00 UTC in winter, 15:00 UTC in summer). GitHub may start a
-  scheduled run late, sometimes by half an hour or more.
-- `python ig_studio.py gate` decides whether a run posts. It says no before
-  `studio.api_start` in `config.json` (2026-12-09), on any day but Mon/Wed/Fri,
-  before 11:00 New York, and on any date that already has a post in
-  `content/studio_schedule.json`. That last rule is what keeps the API off the
-  Business Suite dates and stops a second post on one day.
-- A run posts the next item in `content/studio_instagram.json`, then writes the
-  cursor to `content/state.json` and the post to the ledger, and commits both.
-- A failed run does not advance the cursor. The next slot retries the same item,
-  and GitHub emails the repository owner about the failed run.
+- The workflow fires every day at 15:07, 16:07 and 17:07 UTC and at 23:07,
+  00:07 and 01:07 UTC. 11:00 in New York is 16:00 UTC in winter and 15:00 UTC in
+  summer; 19:00 is 00:00 or 23:00 UTC. GitHub may start a scheduled run late.
+- `python ig_studio.py gate` decides whether a run posts. It looks for the
+  earliest of today's two slots whose hour has come and which has no entry in
+  `content/studio_schedule.json`. If there is one, and the date is not before
+  `studio.api_start` in `config.json`, and something in the library is still
+  waiting, the run posts. So the first run at or after a slot fills it, the
+  later ones find it filled and stop, and a run that failed or never started is
+  made up by the next one. That same rule keeps the API off slots filled in
+  Business Suite.
+- A run posts one item: the first in `content/studio_instagram.json` whose id is
+  not in the ledger, preferring an app that is not already posting that day and
+  did not have the previous post. It then writes the post into the ledger and
+  commits it.
+- A failed run records nothing, the next run retries the same item, and GitHub
+  emails the repository owner. If Meta refuses the same item three times for a
+  reason of its own (not a refused token or a rate limit), the item is set
+  aside in `content/state.json` and the run after posts the next one.
+  `python ig_studio.py stock` lists anything set aside.
 - Runs started by hand skip the gate. With no box ticked, **Run workflow posts
-  the next item immediately.** Tick `check_only`, `dry_run` or `probe`, or fill in
-  `rehearse`, unless that is what you want.
+  the next item immediately** and takes that day's next free slot. Tick
+  `check_only`, `dry_run`, `probe` or `health_only`, or fill in `rehearse`,
+  unless that is what you want.
 
 ### What a library item can be
 
@@ -227,16 +263,12 @@ cancelling a post scheduled in Business Suite". All nine were checked on
 | `slides: [...]` | a carousel, one image per slide; each slide is one of the two above |
 | `video` | a Reel from `public/video/` |
 
-`"once": true` posts an item a single time and skips it when the library comes
-round again. The seven App Store clips added on 2026-11-17 are all `once`,
-because a clip that says "Updated November 9, 2026" does not age well.
-
-The queue from the cursor onward is laid out by hand so that no week shows the
-same app twice and the dated clips go early: a clip, a new post, a card. The
-last App Store clip runs on 2027-01-11.
+Every item is posted once. (`"once": true` on older items is no longer read.)
+The order in the file is the order of posting, apart from the rule that keeps
+one app from posting twice running.
 
 To add a clip: put the file in `public/video/` (1080x1920 MP4, under 20 MB so
-jsDelivr serves it) and add the item after the cursor. To add a screenshot: put
+jsDelivr serves it) and add the item to the library. To add a screenshot: put
 it in `assets/shots/` (900 px wide JPEG) and name it in `shot`. Screenshots come
 from the apps' own store listings; check each one for anything personal before
 it goes into this public repo. Then push and run the workflow with the item's id
@@ -254,7 +286,7 @@ waits 30 seconds and tries again, up to six times.
 ### To pause or stop
 
 Actions -> Studio Instagram -> the `...` menu -> Disable workflow. Nothing else
-needs to change, and enabling it again resumes from the same cursor.
+needs to change, and enabling it again carries on with the next item that has not been posted.
 
 ### If the token ever has to be replaced
 

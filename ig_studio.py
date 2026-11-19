@@ -22,6 +22,7 @@ Two kinds of token work, and the script finds out which one it was given:
   python ig_studio.py probe     # ask Meta to accept every video and one card, publish nothing
   python ig_studio.py stock     # how many posts are waiting and how long they last
   python ig_studio.py lint      # check the library before new items are committed
+  python ig_studio.py angles    # every headline and caption opening so far, by app
 
 The schedule is two posts a day, every day, at 11:00 and 19:00 New York time.
 Nothing is posted twice: content/studio_schedule.json (the ledger) is the whole
@@ -689,7 +690,7 @@ def handoff(days=3):
                      "type_date": d.strftime("%m/%d/%Y"),
                      "want_date": f"{d.strftime('%b')} {d.day}, {d.year}",
                      "type_hour": str(h12), "type_minute": "00", "type_meridiem": mer[0],
-                     "want_time": f"{h12}:00{mer}", "list_time": f"{h12}:00{mer.lower()}",
+                     "want_time": f"{h12:02d}:00{mer}", "list_time": f"{h12}:00{mer.lower()}",
                      "files": files, "app": it.get("app", ""),
                      "status_on_card": it.get("status", ""), "caption": it["caption"]})
     print(json.dumps(rows, indent=1, ensure_ascii=False))
@@ -746,6 +747,24 @@ def stock():
     if parked:
         print("set aside after repeated refusals by Meta: " + ", ".join(parked))
     return cover
+
+
+def angles(app=None):
+    """Every headline and caption opening already in the library, by app, so a
+    new item can be checked against what has been said before."""
+    posted = {r["id"] for r in _ledger()["scheduled"]}
+    for it in sorted(_load_lib(), key=lambda x: (x.get("app", ""), x["id"])):
+        if app and it.get("app") != app:
+            continue
+        kind = "reel" if it.get("video") else ("carousel" if it.get("slides") else
+                                               ("screenshot" if it.get("shot") else "card"))
+        heads = [sp.get("headline", "") for sp in ([it] + it.get("slides", [])) if sp.get("headline")]
+        shots = sorted({sp["shot"] for sp in ([it] + it.get("slides", [])) if sp.get("shot")})
+        print(f"{it.get('app')} | {it['id']} | {'posted' if it['id'] in posted else 'waiting'} | {kind}"
+              + (f" [{', '.join(shots)}]" if shots else ""))
+        for h in heads:
+            print(f"    headline: {h}")
+        print(f"    caption:  {it['caption'].strip().splitlines()[0]}")
 
 
 def lint():
@@ -829,5 +848,8 @@ if __name__ == "__main__":
             raise SystemExit("usage: python ig_studio.py handoff-done ID YYYY-MM-DD [11:00|19:00]")
         handoff_done(*sys.argv[2:])
     else:
-        {"check": check, "gate": gate, "build": build, "publish": publish,
-         "probe": probe, "health": health, "stock": stock, "lint": lint}[cmd]()
+        if cmd == "angles":
+            angles(sys.argv[2] if len(sys.argv) > 2 else None)
+        else:
+            {"check": check, "gate": gate, "build": build, "publish": publish,
+             "probe": probe, "health": health, "stock": stock, "lint": lint}[cmd]()

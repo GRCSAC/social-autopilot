@@ -38,7 +38,7 @@ no secrets — the Buffer token lives only in GitHub Actions secrets.
 | `studio.py` + `assets/apps/` + `assets/shots/` | Portrait (1080x1350) card renderer for the studio stream: typographic cards, screenshot cards and carousel slides, plus every app's icon and the store screenshots used |
 | `tools/make_meter_reel.py` | Renders the animated Sunk Cost meter Reel (Pillow + ffmpeg, run on a laptop) |
 | `studio_queue.py` + `content/studio_schedule.json` | The ledger of every studio post by date. `status` reads it; the planner in this file is superseded by `ig_studio.py handoff`, the safety net that schedules in Meta Business Suite when the API refuses the token (see STUDIO-SCHEDULING.md) |
-| `ig_studio.py` + `.github/workflows/studio.yml` + `public/video/` | Publishes the studio stream through Meta's API, Mon/Wed/Fri from 2026-12-09: rendered cards and Reels |
+| `ig_studio.py` + `.github/workflows/studio.yml` + `public/video/` | Publishes the studio stream through Meta's API twice a day, every day, each item once: rendered cards and Reels |
 | `content/state.json` | Rotation pointer (which item is next per channel) — managed automatically |
 | `config.json` | Channel IDs and posts-per-run |
 | `generate.py` / `brand.py` | The image renderer + brand system |
@@ -108,9 +108,12 @@ claim under 120 characters, because that line is all a phone shows.
 ## The GRCSAC Studio stream (apps and repos)
 
 A second Instagram account, for the apps on grcsac.com rather than the books. It
-is a **curated** stream, never LLM-generated: every headline and caption is a
-checked product fact (price, platform, store status) taken from the app's own
-site, so a wrong claim can only come from a human edit. Items in
+is a **written-ahead** stream: nothing is generated at posting time. Every item
+sits in the library before it runs, and every claim in it (price, platform,
+store status, what the app does) was read from the app's own site on the day
+the item was written. New items are added by the rules in
+[STUDIO-CONTENT.md](STUDIO-CONTENT.md) and must pass `python ig_studio.py lint`.
+Items in
 `content/studio_instagram.json`:
 
 ```json
@@ -122,23 +125,24 @@ site, so a wrong claim can only come from a human edit. Items in
 ```
 
 `app` picks the icon (`assets/apps/<app>.png`) and the accent colour (`studio.py`
-`ACCENT`, taken from the grcsac.com tile palette). The library is interleaved
-round-robin across apps so one week never shows three cards for the same app.
+`ACCENT`, taken from the grcsac.com tile palette). Each item is posted once, in
+file order, except that an app which has just posted waits a turn.
 
 Preview: `python studio.py content/studio_instagram.json ig-studio-siftlet-1 -o preview.jpg`
 or `--all -o preview/` for the whole library.
 
-**This stream does not go through Buffer** (its free plan is full). The first nine
-posts, 18 Nov to 7 Dec 2026, were scheduled by hand in Meta Business Suite. From
-9 Dec 2026 `.github/workflows/studio.yml` publishes through Meta's API on
-Mon/Wed/Fri at 11:00 Eastern: `ig_studio.py` renders the next card, or takes the
-next video from `public/video/`, posts it, and records it in
-`content/studio_schedule.json`. How the schedule, the gate and the token work is
-in [STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
+**This stream does not go through Buffer** (its free plan is full).
+`.github/workflows/studio.yml` publishes through Meta's API **twice a day, every
+day, at 11:00 and 19:00 Eastern**: `ig_studio.py` renders the next card, or takes
+the next video from `public/video/`, posts it, and records it in
+`content/studio_schedule.json`. That file is the account's whole history, and
+an item in it is **never posted again**; when nothing is waiting, nothing is
+posted. How the schedule, the gate and the token work is in
+[STUDIO-SCHEDULING.md](STUDIO-SCHEDULING.md).
 
 An item can also be a screenshot card (`"shot": "file.jpg"` from `assets/shots/`),
 a carousel (`"slides": [...]`), or a Reel (`"video": "file.mp4"` from
-`public/video/`). `"once": true` posts it a single time. The table of item kinds
+`public/video/`). The table of item kinds
 and how to rehearse a new one without publishing it is in STUDIO-SCHEDULING.md.
 
 House rules for new studio items: plain founder voice, second person, no em or
