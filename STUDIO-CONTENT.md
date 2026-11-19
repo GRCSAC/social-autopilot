@@ -22,7 +22,7 @@ fails any of the three is not added. Fewer posts is better than a padded one.
   and site that day. If they changed, fix the app's waiting items in the same
   commit.
 - Do not write anything that will stop being true before it posts. An item can
-  wait three weeks. So: no price for an app whose site announces a price
+  wait four weeks. So: no price for an app whose site announces a price
   change, no "new", "this week", "just shipped", no version numbers, no
   seasonal or holiday posts, no dates.
 - Never invent or imply: reviews, ratings, download or user numbers,

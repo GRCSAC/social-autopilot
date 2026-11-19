@@ -51,10 +51,10 @@ repo decides which post goes in which slot and keeps the ledger.
 
 Two posts a day with no repeats uses fourteen items a week. A scheduled task in
 Claude's desktop app on the laptop (`grcsac-studio-content`, Monday and Thursday
-mornings) keeps at least three weeks of posts waiting:
+mornings) keeps about four weeks of posts waiting:
 
 1. `python ig_studio.py stock` says how many items are waiting and how many days
-   they cover. Twenty-one days or more ends the run.
+   they cover. Twenty-eight days or more ends the run.
 2. Otherwise it writes new items by the rules in
    [STUDIO-CONTENT.md](STUDIO-CONTENT.md): every claim read from the app's own
    page that day, and a point no earlier item makes
