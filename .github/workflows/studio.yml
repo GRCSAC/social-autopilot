@@ -1,17 +1,20 @@
 name: Studio Instagram
 
 # The GRCSAC Studio Instagram (@grcsac_studio), published straight through Meta's
-# API by ig_studio.py. Posts already scheduled in Meta Business Suite run until
-# 2026-12-07; this workflow takes over on 2026-12-09 (config.json studio.api_start).
+# API by ig_studio.py: two posts a day, every day, at 11:00 and 19:00 New York
+# time, and no item is ever posted twice. Slots already filled by a post
+# scheduled in Meta Business Suite are skipped (content/studio_schedule.json).
 # See STUDIO-SCHEDULING.md.
 
 on:
   schedule:
-    # Mon/Wed/Fri at 15:00 and 16:00 UTC. One of the two is 11:00 in New York
-    # (16:00 UTC in winter, 15:00 UTC in summer). `ig_studio.py gate` lets only
-    # that one post, and never on a date that already has a post in the ledger.
-    - cron: "0 15 * * 1,3,5"
-    - cron: "0 16 * * 1,3,5"
+    # Every day, three runs around each slot. 11:00 New York is 16:00 UTC in
+    # winter and 15:00 UTC in summer; 19:00 New York is 00:00 or 23:00 UTC.
+    # `ig_studio.py gate` lets the first run at or after the slot post, and the
+    # later ones only if that slot is still empty, so a failed or dropped run
+    # is retried within the hour. Minute 7 keeps clear of GitHub's busy hour mark.
+    - cron: "7 15,16,17 * * *"
+    - cron: "7 23,0,1 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -100,7 +103,7 @@ jobs:
         if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe && !inputs.health_only }}
         run: python ig_studio.py publish
 
-      - name: Save cursor, ledger and refreshed token
+      - name: Save ledger, state and refreshed token
         if: ${{ always() && steps.gate.outputs.go == 'true' }}
         run: |
           git config user.name  "social-autopilot[bot]"
@@ -110,7 +113,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nothing to save."
           else
-            git commit -m "studio: advance cursor ($(date -u +%F))"
+            git commit -m "studio: record post ($(date -u +%F))"
             git pull --rebase origin main
             git push
           fi

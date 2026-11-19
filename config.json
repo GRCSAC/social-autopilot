@@ -12,7 +12,7 @@
   },
   "studio": {
     "posts_per_run": 1,
-    "_note": "GRCSAC Studio Instagram, published directly by ig_studio.py (studio.yml), not Buffer. api_start: first date a scheduled run may post (Business Suite covers the dates before it).",
-    "api_start": "2026-12-09"
+    "_note": "GRCSAC Studio Instagram, published directly by ig_studio.py (studio.yml), not Buffer. Two slots a day, 11:00 and 19:00 New York, every day; no item is posted twice. api_start: first date a scheduled run may post.",
+    "api_start": "2026-11-20"
   }
 }

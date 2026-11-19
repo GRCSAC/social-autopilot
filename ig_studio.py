@@ -16,20 +16,27 @@ Two kinds of token work, and the script finds out which one it was given:
               account's Instagram ID in IG_STUDIO_USER_ID.
 
   python ig_studio.py check     # who the token belongs to, may it publish, latest posts
-  python ig_studio.py gate      # should a scheduled run post today? (writes go=true/false)
-  python ig_studio.py build     # render the next card(s) into public/cards + _studio_batch.json
-  python ig_studio.py publish   # wait for the media URL, publish, advance the cursor
+  python ig_studio.py gate      # is a slot due and free right now? (writes go=true/false)
+  python ig_studio.py build     # render the next post into public/cards + _studio_batch.json
+  python ig_studio.py publish   # wait for the media URL, publish, write the ledger
   python ig_studio.py probe     # ask Meta to accept every video and one card, publish nothing
+  python ig_studio.py stock     # how many posts are waiting and how long they last
+  python ig_studio.py lint      # check the library before new items are committed
+
+The schedule is two posts a day, every day, at 11:00 and 19:00 New York time.
+Nothing is posted twice: content/studio_schedule.json (the ledger) is the whole
+history of the account, and an item whose id is in it is done for good. The
+next post is the first library item not in the ledger, preferring an app that
+has not just posted. When nothing is waiting, nothing is posted.
 
 REHEARSE=id1,id2 (the workflow's "rehearse" box) builds exactly those items and
 takes them as far as Meta accepting them, then stops: nothing is published and
 neither the cursor nor the ledger moves.
 
 A library item with "slides" is posted as a carousel, one rendered image per
-slide. A library item with a "video" field is posted as a Reel from public/video/ instead
-of a rendered card. "once": true means it is posted a single time and skipped when
-the library comes round again (a clip that says "Updated November 9" does not age
-well).
+slide. A library item with a "video" field is posted as a Reel from public/video/
+instead of a rendered card. ("once" on older items is no longer read: every
+item is posted once.)
 
 Environment:
   IG_STUDIO_TOKEN       the token (GitHub secret). For an instagram token it is only the
@@ -65,18 +72,16 @@ LIB = ROOT / "content" / "studio_instagram.json"
 CARDS = ROOT / "public" / "cards"
 VIDEO = ROOT / "public" / "video"
 LEDGER = ROOT / "content" / "studio_schedule.json"
-ONCE_DONE = "studio_once_done"
-AHEAD = "studio_posted_ahead"   # posted by the fallback before the cursor reached them
 QUEUE = ROOT / "preview" / "queue"
-SLOT_DAYS = {0, 2, 4}           # Mon, Wed, Fri
-SLOT_HOUR = 11                  # America/New_York
+SLOTS = (11, 19)                # hours in America/New_York: two posts a day, every day
+FAILED = "studio_failed"        # state.json: how often Meta refused each waiting item
+PARK_AFTER = 3                  # refusals before an item is set aside so the queue moves on
 BATCH = ROOT / "_studio_batch.json"
 TOKEN_FILE = ROOT / "content" / "ig_studio_token.enc"
 
 API_IG = "https://graph.instagram.com"
 API_FB = "https://graph.facebook.com"
 VERSION = os.environ.get("IG_API_VERSION", "v27.0")
-CURSOR = "studio_instagram"
 
 
 # ------------------------------------------------------------------ http
@@ -276,29 +281,84 @@ def _video_url(it):
     return f"{_base()}/video/{it['video']}" if _base() else None
 
 
-def gate():
-    """Decide whether a scheduled run posts now. Slots are Mon/Wed/Fri 11:00
-    Eastern; the workflow fires at 15:00 and 16:00 UTC so one of the two lands
-    on 11:00 in both winter and summer time. A date already in the ledger (a
-    post scheduled in Business Suite, or one this workflow already published)
-    is never posted to twice."""
+def _now():
     from zoneinfo import ZoneInfo
-    now = datetime.now(ZoneInfo("America/New_York"))
+    return datetime.now(ZoneInfo("America/New_York"))
+
+
+def _ledger():
+    return json.loads(LEDGER.read_text(encoding="utf-8"))
+
+
+def _state():
+    return json.loads(STATE.read_text(encoding="utf-8"))
+
+
+def _write_ledger(led):
+    led["scheduled"].sort(key=lambda r: (r["date"], r["time"]))
+    LEDGER.write_text(json.dumps(led, indent=1) + "\n", encoding="utf-8")
+
+
+def _waiting(lib, led, state, images_only=False):
+    """Items never posted or scheduled, in library order. An id in the ledger
+    is done for good, so nothing is posted twice. Items Meta has refused
+    PARK_AFTER times are set aside until someone looks at them."""
+    posted = {r["id"] for r in led["scheduled"]}
+    parked = {k for k, v in state.get(FAILED, {}).items() if v >= PARK_AFTER}
+    return [it for it in lib if it["id"] not in posted and it["id"] not in parked
+            and not (images_only and it.get("video"))]
+
+
+def _spread(waiting, lib, led, day):
+    """The waiting items, those first whose app is not already posting on
+    `day` and was not the last post before it. Keeps one app from filling a
+    day when something else is waiting."""
+    app = {it["id"]: it.get("app") for it in lib}
+    rows = sorted(led["scheduled"], key=lambda r: (r["date"], r["time"]))
+    avoid = {app.get(r["id"]) for r in rows if r["date"] == day}
+    before = [r for r in rows if r["date"] < day]
+    if before:
+        avoid.add(app.get(before[-1]["id"]))
+    return ([it for it in waiting if it.get("app") not in avoid]
+            + [it for it in waiting if it.get("app") in avoid])
+
+
+def _open_slot(now, led, due_only=True):
+    """The earliest of today's slots with no post yet. With due_only, only a
+    slot whose hour has come, so a morning run that failed is caught up by the
+    next run instead of being lost."""
+    today = now.date().isoformat()
+    taken = {r["time"] for r in led["scheduled"] if r["date"] == today}
+    for h in SLOTS:
+        if f"{h}:00" not in taken and (now.hour >= h or not due_only):
+            return h
+    return None
+
+
+def gate():
+    """Decide whether a scheduled run posts now. Slots are 11:00 and 19:00
+    New York time, every day; the workflow fires a few times around each so
+    one run lands on the hour in winter and in summer time and the next one
+    retries a failure. A slot already in the ledger (scheduled in Business
+    Suite, or already published by this workflow) is never posted to twice."""
+    now = _now()
     today = now.date().isoformat()
     start = CONFIG.get("studio", {}).get("api_start", "")
-    led = json.loads(LEDGER.read_text(encoding="utf-8"))
+    led = _ledger()
+    slot = _open_slot(now, led)
     if os.environ.get("GITHUB_EVENT_NAME", "schedule") != "schedule":
         go, why = True, "started by hand"
     elif start and today < start:
         go, why = False, f"before the API start date {start}"
-    elif now.weekday() not in SLOT_DAYS:
-        go, why = False, "not a Monday, Wednesday or Friday in New York"
-    elif now.hour < SLOT_HOUR:
-        go, why = False, f"before {SLOT_HOUR}:00 in New York"
-    elif any(r["date"] == today for r in led["scheduled"]):
-        go, why = False, f"{today} already has a post in the ledger"
+    elif slot is None:
+        go, why = False, (f"no slot is due and free on {today} "
+                          f"(slots {' and '.join(f'{h}:00' for h in SLOTS)} New York)")
+    elif not _waiting(_load_lib(), led, _state()):
+        go, why = False, "every item in the library has been posted; nothing is repeated"
+        print("::warning::Studio Instagram has no new posts left. "
+              "Add items to content/studio_instagram.json.")
     else:
-        go, why = True, f"slot {today} {SLOT_HOUR}:00 New York is free"
+        go, why = True, f"slot {today} {slot}:00 New York is free"
     print(f"gate: {'GO' if go else 'SKIP'} ({why})")
     out = os.environ.get("GITHUB_OUTPUT")
     if out:
@@ -314,13 +374,8 @@ def build():
         print("WARNING: PUBLIC_BASE_URL not set; media URLs will be blank")
     n = CONFIG.get("studio", {}).get("posts_per_run", 1)
     lib = _load_lib()
-    state = json.loads(STATE.read_text(encoding="utf-8"))
-    cur = state.get(CURSOR, 0)
-    done = list(state.get(ONCE_DONE, []))
-    ahead = list(state.get(AHEAD, []))
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
     CARDS.mkdir(parents=True, exist_ok=True)
-    items, looked = [], 0
     rehearse = [x.strip() for x in os.environ.get("REHEARSE", "").split(",") if x.strip()]
 
     def one(it):
@@ -336,33 +391,21 @@ def build():
             urls.append(f"{base}/cards/{fname}" if base else None)
         return {"label": it["id"], "caption": it["caption"], "image_urls": urls, "video_url": None}
 
+    left = None
     if rehearse:
         by_id = {it["id"]: it for it in lib}
         missing = [x for x in rehearse if x not in by_id]
         if missing:
             raise SystemExit(f"rehearse: no such item(s): {', '.join(missing)}")
         items = [one(by_id[x]) for x in rehearse]
-    while not rehearse and len(items) < n and looked < len(lib):
-        it = lib[cur % len(lib)]
-        cur += 1
-        looked += 1
-        if it["id"] in ahead:
-            ahead.remove(it["id"])        # the fallback already posted it
-            continue
-        if it.get("once") and it["id"] in done:
-            continue                      # a one-time post that already ran
-        items.append(one(it))
-        if it.get("once"):
-            done.append(it["id"])
-    next_state = dict(state)
-    if not rehearse:
-        next_state[CURSOR] = cur % len(lib)
-        if done:
-            next_state[ONCE_DONE] = done
-        if ahead or AHEAD in state:
-            next_state[AHEAD] = ahead
-    BATCH.write_text(json.dumps({"items": items, "next_state": next_state}, indent=2), encoding="utf-8")
-    print(f"Built studio batch: {len(items)} post(s)")
+    else:
+        led = _ledger()
+        waiting = _spread(_waiting(lib, led, _state()), lib, led, _now().date().isoformat())
+        items = [one(it) for it in waiting[:n]]
+        left = len(waiting) - len(items)
+    BATCH.write_text(json.dumps({"items": items}, indent=2), encoding="utf-8")
+    print(f"Built studio batch: {len(items)} post(s)"
+          + (f"; {left} more waiting in the library" if left is not None else ""))
     for it in items:
         print(f"  - {it['label']}  {it['video_url'] or ', '.join(u or '(no url)' for u in it['image_urls'])}")
 
@@ -480,17 +523,34 @@ def probe():
     print(f"all {len(jobs)} item(s) accepted")
 
 
-def _record(labels, next_state):
-    """Write what was just published into the ledger, so the gate never posts
-    twice on one date and the ledger stays the single history of the account."""
-    from zoneinfo import ZoneInfo
-    today = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
-    led = json.loads(LEDGER.read_text(encoding="utf-8"))
+def _record(labels):
+    """Write what was just published into the ledger: the single history of
+    the account, which is what keeps a slot from being filled twice and an
+    item from being posted twice."""
+    now = _now()
+    today = now.date().isoformat()
+    led = _ledger()
     for label in labels:
-        led["scheduled"].append({"id": label, "date": today, "time": f"{SLOT_HOUR}:00",
+        h = _open_slot(now, led)
+        if h is None:                     # started by hand outside a slot
+            h = _open_slot(now, led, due_only=False)
+        led["scheduled"].append({"id": label, "date": today,
+                                 "time": f"{h}:00" if h is not None else now.strftime("%H:%M"),
                                  "scheduled_on": today, "via": "api"})
-    led["next_cursor"] = next_state[CURSOR]
-    LEDGER.write_text(json.dumps(led, indent=1) + "\n", encoding="utf-8")
+    led.pop("next_cursor", None)
+    _write_ledger(led)
+
+
+def _item_fault(e):
+    """True when Meta refused this particular post, as opposed to refusing the
+    token, throttling the account or being unreachable."""
+    m = str(e)
+    if not isinstance(e, RuntimeError):
+        return False
+    if any(x in m for x in ("API access blocked", "code 190,", "code 200,", "code 10,",
+                            "code 4,", "code 17,", "code 32,", "code 613,")):
+        return False
+    return m.startswith("Instagram API 4") or m.startswith("container")
 
 
 def publish():
@@ -500,7 +560,10 @@ def publish():
         for it in batch["items"]:
             print(f"  DRY RUN would publish {it['label']}: {it.get('video_url') or ', '.join(it['image_urls'])}")
             print("    " + it["caption"].splitlines()[0])
-        print("Dry run: nothing published, state not advanced.")
+        print("Dry run: nothing published, ledger untouched.")
+        return
+    if not batch["items"]:
+        print("Nothing to publish: every item in the library has been posted.")
         return
     rec = load_token()
     acct = resolve(rec["token"])
@@ -509,7 +572,9 @@ def publish():
     rehearse = bool(os.environ.get("REHEARSE", "").strip())
     print(f"{'REHEARSING, nothing will be published,' if rehearse else 'publishing'} as "
           f"@{acct['username']} ({acct['kind']} API)")
-    failures = 0
+    state = _state()
+    refused = dict(state.get(FAILED, {}))
+    failures, posted = 0, []
     for it in batch["items"]:
         urls = [it["video_url"]] if it.get("video_url") else list(it.get("image_urls") or [])
         if not urls or not all(urls):
@@ -529,17 +594,32 @@ def publish():
             mid, link = _publish_one(acct, rec["token"], it.get("image_urls"), it["caption"],
                                      it.get("video_url"))
             print(f"  published {it['label']} -> {mid} {link}")
+            posted.append(it["label"])
+            refused.pop(it["label"], None)
         except Exception as e:
             print(f"  FAIL {it['label']}: {e}")
             failures += 1
-    if failures:
-        raise SystemExit(f"{failures} post(s) failed; cursor not advanced, retried next run")
+            if not rehearse and _item_fault(e):
+                refused[it["label"]] = refused.get(it["label"], 0) + 1
+                if refused[it["label"]] >= PARK_AFTER:
+                    print(f"::warning::{it['label']} was refused {PARK_AFTER} times and is set "
+                          f"aside; the next run posts the item after it.")
     if rehearse:
-        print("Rehearsal done: nothing published, cursor and ledger untouched.")
+        if failures:
+            raise SystemExit(f"{failures} item(s) were not accepted")
+        print("Rehearsal done: nothing published, ledger untouched.")
         return
-    STATE.write_text(json.dumps(batch["next_state"], indent=2) + "\n", encoding="utf-8")
-    _record([it["label"] for it in batch["items"]], batch["next_state"])
-    print(f"cursor advanced: {CURSOR} = {batch['next_state'][CURSOR]}")
+    if posted:
+        _record(posted)
+    if refused != state.get(FAILED, {}):
+        if refused:
+            state[FAILED] = refused
+        else:
+            state.pop(FAILED, None)
+        STATE.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+    if failures:
+        raise SystemExit(f"{failures} post(s) failed; not recorded, retried by the next run")
+    print(f"ledger updated: {', '.join(posted)}")
 
 
 # ------------------------------------------------------------------ fallback
@@ -562,104 +642,192 @@ def health():
 
 
 def _free_slots(days):
-    """Slot dates from today through today+days that have no post yet."""
-    from zoneinfo import ZoneInfo
-    now = datetime.now(ZoneInfo("America/New_York"))
+    """(date, hour) for every slot from now through today+days with no post."""
+    now = _now()
     start = CONFIG.get("studio", {}).get("api_start", "")
-    taken = {r["date"] for r in json.loads(LEDGER.read_text(encoding="utf-8"))["scheduled"]}
+    taken = {(r["date"], r["time"]) for r in _ledger()["scheduled"]}
     out = []
     for i in range(days + 1):
         d = now.date() + timedelta(days=i)
         iso = d.isoformat()
-        if d.weekday() not in SLOT_DAYS or iso in taken or (start and iso < start):
+        if start and iso < start:
             continue
-        if i == 0 and now.hour >= SLOT_HOUR - 1:
-            continue                      # too late to schedule today's 11:00
-        out.append(d)
+        for h in SLOTS:
+            if (iso, f"{h}:00") in taken:
+                continue
+            if i == 0 and now.hour >= h - 1:
+                continue                  # too late to schedule that one today
+            out.append((d, h))
     return out
 
 
-def _next_images(state, lib, n):
-    """The next n items the fallback can post: images only (video waits for
-    the API), in library order from the cursor, nothing posted before."""
-    cur = state.get(CURSOR, 0)
-    done, ahead = set(state.get(ONCE_DONE, [])), set(state.get(AHEAD, []))
-    out = []
-    for i in range(len(lib)):
-        if len(out) >= n:
-            break
-        it = lib[(cur + i) % len(lib)]
-        if it.get("video") or it["id"] in ahead or (it.get("once") and it["id"] in done):
-            continue
-        out.append(it)
-    return out
-
-
-def handoff(days=7):
+def handoff(days=3):
     """Print, as JSON, the posts to schedule in Business Suite for the free
-    slots of the next `days` days, with their rendered images. Changes nothing."""
+    slots of the next `days` days, with their rendered images. Images only: a
+    Reel waits for the API. Changes nothing."""
     import studio
-    lib = _load_lib()
-    state = json.loads(STATE.read_text(encoding="utf-8"))
-    slots = _free_slots(days)
+    lib, state = _load_lib(), _state()
+    sim = _ledger()                       # a copy that fills up as slots are assigned
     rows = []
     QUEUE.mkdir(parents=True, exist_ok=True)
-    for d, it in zip(slots, _next_images(state, lib, len(slots))):
+    for d, h in _free_slots(days):
+        iso = d.isoformat()
+        cand = _spread(_waiting(lib, sim, state, images_only=True), lib, sim, iso)
+        if not cand:
+            break
+        it = cand[0]
+        sim["scheduled"].append({"id": it["id"], "date": iso, "time": f"{h}:00"})
         specs = studio.slides_of(it)
         files = []
         for i, sp in enumerate(specs, 1):
             tail = f"-{i}" if len(specs) > 1 else ""
-            f = QUEUE / f"{d.isoformat()}-{it['id']}{tail}.jpg"
+            f = QUEUE / f"{iso}-{h:02d}-{it['id']}{tail}.jpg"
             studio.render(sp, f)
             files.append(str(f))
-        rows.append({"id": it["id"], "date_iso": d.isoformat(),
+        h12, mer = (h if h <= 12 else h - 12), ("AM" if h < 12 else "PM")
+        rows.append({"id": it["id"], "date_iso": iso, "slot": f"{h}:00",
                      "type_date": d.strftime("%m/%d/%Y"),
                      "want_date": f"{d.strftime('%b')} {d.day}, {d.year}",
-                     "time": "11:00 AM", "files": files, "app": it.get("app", ""),
+                     "type_hour": str(h12), "type_minute": "00", "type_meridiem": mer[0],
+                     "want_time": f"{h12}:00{mer}", "list_time": f"{h12}:00{mer.lower()}",
+                     "files": files, "app": it.get("app", ""),
                      "status_on_card": it.get("status", ""), "caption": it["caption"]})
     print(json.dumps(rows, indent=1, ensure_ascii=False))
 
 
-def handoff_done(pid, d):
-    """Record one post as scheduled in Business Suite on date d."""
-    from zoneinfo import ZoneInfo
+def handoff_done(pid, d, slot=None):
+    """Record one post as scheduled in Business Suite on date d in `slot`."""
     datetime.strptime(d, "%Y-%m-%d")
-    lib = _load_lib()
-    ids = [it["id"] for it in lib]
-    state = json.loads(STATE.read_text(encoding="utf-8"))
-    led = json.loads(LEDGER.read_text(encoding="utf-8"))
-    if pid not in [it["id"] for it in _next_images(state, lib, len(lib))]:
+    slot = slot or f"{SLOTS[0]}:00"
+    if slot not in {f"{h}:00" for h in SLOTS}:
+        raise SystemExit(f"refusing: slot must be one of {', '.join(f'{h}:00' for h in SLOTS)}")
+    lib, state, led = _load_lib(), _state(), _ledger()
+    if pid not in [it["id"] for it in _waiting(lib, led, state, images_only=True)]:
         raise SystemExit(f"refusing: {pid} is not an image item still waiting to be posted")
-    if any(r["date"] == d for r in led["scheduled"]):
-        raise SystemExit(f"refusing: {d} already has a post in the ledger")
-    it = lib[ids.index(pid)]
-    ahead = list(state.get(AHEAD, [])) + [pid]
-    cur = state.get(CURSOR, 0)
-    while lib[cur % len(lib)]["id"] in ahead:     # the cursor itself was posted: move on
-        ahead.remove(lib[cur % len(lib)]["id"])
-        cur += 1
-    state[CURSOR], state[AHEAD] = cur % len(lib), ahead
-    if it.get("once"):
-        state[ONCE_DONE] = list(state.get(ONCE_DONE, [])) + [pid]
-    today = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
-    led["scheduled"].append({"id": pid, "date": d, "time": f"{SLOT_HOUR}:00",
-                             "scheduled_on": today, "via": "business-suite"})
-    led["scheduled"].sort(key=lambda r: r["date"])
-    led["next_cursor"] = state[CURSOR]
-    STATE.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
-    LEDGER.write_text(json.dumps(led, indent=1) + "\n", encoding="utf-8")
-    print(f"recorded {pid} on {d} (Business Suite); cursor {state[CURSOR]}, "
-          f"posted ahead of the cursor: {', '.join(ahead) or 'none'}")
+    if any(r["date"] == d and r["time"] == slot for r in led["scheduled"]):
+        raise SystemExit(f"refusing: {d} {slot} already has a post in the ledger")
+    led["scheduled"].append({"id": pid, "date": d, "time": slot,
+                             "scheduled_on": _now().date().isoformat(), "via": "business-suite"})
+    led.pop("next_cursor", None)
+    _write_ledger(led)
+    print(f"recorded {pid} on {d} {slot} (Business Suite)")
+
+
+# ------------------------------------------------------------------ stock + lint
+def stock():
+    """How many posts are waiting, and the last date they cover at two a day."""
+    lib, led, state = _load_lib(), _ledger(), _state()
+    waiting = _waiting(lib, led, state)
+    reels = sum(1 for it in waiting if it.get("video"))
+    now = _now()
+    start = CONFIG.get("studio", {}).get("api_start", "")
+    taken = {(r["date"], r["time"]) for r in led["scheduled"]}
+    left, last = len(waiting), None
+    for i in range(800):
+        if left <= 0:
+            break
+        iso = (now.date() + timedelta(days=i)).isoformat()
+        if start and iso < start:
+            continue
+        for h in SLOTS:
+            if left > 0 and (iso, f"{h}:00") not in taken and not (i == 0 and now.hour > h):
+                left -= 1
+                last = iso
+    cover = (datetime.strptime(last, "%Y-%m-%d").date() - now.date()).days if last else 0
+    print(f"stock: {len(waiting)} waiting ({len(waiting) - reels} image posts, {reels} Reels), "
+          f"enough through {last or 'today'} ({cover} days); {len(led['scheduled'])} posted or scheduled")
+    apps = {}
+    posted = {r["id"] for r in led["scheduled"]}
+    for it in lib:
+        a = apps.setdefault(it.get("app", "?"), [0, 0])
+        a[0 if it["id"] in posted else 1] += 1
+    print("by app (posted/waiting): " + ", ".join(f"{k} {v[0]}/{v[1]}" for k, v in sorted(apps.items())))
+    parked = sorted(k for k, v in state.get(FAILED, {}).items() if v >= PARK_AFTER)
+    if parked:
+        print("set aside after repeated refusals by Meta: " + ", ".join(parked))
+    return cover
+
+
+def lint():
+    """Check the library before new items are committed: every item can be
+    rendered and posted, and nothing says the same thing twice."""
+    import re
+    import tempfile
+    import studio
+    lib = _load_lib()
+    posted = {r["id"] for r in _ledger()["scheduled"]}
+    bad, ids, heads, opens = [], set(), {}, {}
+    for it in lib:
+        pid = it.get("id") or "(no id)"
+
+        def no(msg):
+            bad.append(f"{pid}: {msg}")
+        if pid in ids:
+            no("this id is used twice")
+        ids.add(pid)
+        if not re.fullmatch(r"ig-studio-[a-z0-9-]+", pid):
+            no("id must look like ig-studio-<app>-<n>")
+        for k in ("app", "name", "footer", "caption"):
+            if not it.get(k):
+                no(f"missing {k}")
+        if it.get("app") and not (studio.APPS / f"{it['app']}.png").exists():
+            no(f"no icon assets/apps/{it['app']}.png")
+        cap = it.get("caption", "")
+        tags = re.findall(r"#\w+", cap)
+        if len(cap) > 1200:
+            no(f"caption is {len(cap)} characters (limit here 1200)")
+        if not 3 <= len(tags) <= 6:
+            no(f"{len(tags)} hashtags (use 3 to 6)")
+        text = json.dumps(it, ensure_ascii=False)
+        if "\u2014" in text or "\u2013" in text:
+            no("contains a long dash; the house style uses commas, colons or full stops")
+        first = cap.strip().split("\n")[0].strip().lower()
+        if first and first in opens:
+            no(f"caption opens with the same line as {opens[first]}")
+        opens.setdefault(first, pid)
+        specs = [] if it.get("video") else studio.slides_of(it)
+        if it.get("video"):
+            if not (VIDEO / it["video"]).exists():
+                no(f"video file missing: public/video/{it['video']}")
+        elif it.get("slides") and not 2 <= len(specs) <= 10:
+            no("a carousel needs 2 to 10 slides")
+        for sp in specs:
+            h = (sp.get("headline") or "").strip()
+            if not h:
+                no("a card or slide has no headline")
+                continue
+            if len(h) > 70:
+                no(f"headline is {len(h)} characters (limit 70): {h[:40]}")
+            if len(sp.get("sub", "")) > 180:
+                no(f"sub line is {len(sp['sub'])} characters (limit 180)")
+            if sp.get("shot") and not (studio.SHOTS / sp["shot"]).exists():
+                no(f"screenshot missing: assets/shots/{sp['shot']}")
+            key = h.lower()
+            if key in heads and heads[key] != pid:
+                no(f"headline already used by {heads[key]}: {h}")
+            heads.setdefault(key, pid)
+        if specs and pid not in posted and not any(x.startswith(pid + ":") for x in bad):
+            with tempfile.TemporaryDirectory() as tmp:
+                try:
+                    for i, sp in enumerate(specs):
+                        studio.render(sp, Path(tmp) / f"{i}.jpg")
+                except Exception as e:
+                    no(f"does not render: {e}")
+    for b in bad:
+        print("  " + b)
+    if bad:
+        raise SystemExit(f"lint: {len(bad)} problem(s) in {len(lib)} items")
+    print(f"lint: ok ({len(lib)} items, {len(lib) - len(posted & ids)} waiting)")
 
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "check"
     if cmd == "handoff":
-        handoff(int(sys.argv[2]) if len(sys.argv) > 2 else 7)
+        handoff(int(sys.argv[2]) if len(sys.argv) > 2 else 3)
     elif cmd == "handoff-done":
-        if len(sys.argv) != 4:
-            raise SystemExit("usage: python ig_studio.py handoff-done ID YYYY-MM-DD")
-        handoff_done(sys.argv[2], sys.argv[3])
+        if len(sys.argv) not in (4, 5):
+            raise SystemExit("usage: python ig_studio.py handoff-done ID YYYY-MM-DD [11:00|19:00]")
+        handoff_done(*sys.argv[2:])
     else:
         {"check": check, "gate": gate, "build": build, "publish": publish,
-         "probe": probe, "health": health}[cmd]()
+         "probe": probe, "health": health, "stock": stock, "lint": lint}[cmd]()

@@ -1,7 +1,7 @@
 {
- "route": "Meta Business Suite native scheduler (business.facebook.com), account @grcsac_studio",
- "slot": "Mon/Wed/Fri 11:00 America/New_York",
- "next_cursor": 9,
+ "route": "Meta's API (studio.yml) for entries marked api; Meta Business Suite's scheduler for the rest. Account @grcsac_studio.",
+ "slot": "Every day at 11:00 and 19:00 America/New_York",
+ "rule": "This is the whole history of the account. An id listed here is never posted again.",
  "scheduled": [
   {
    "id": "ig-studio-grcsac-1",
