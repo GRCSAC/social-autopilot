@@ -169,10 +169,15 @@ repo changed in between. A blocked check stops the run before anything is render
 or posted, so a scheduled run fails safely. On 2026-11-19 the check was taught
 to ask five read-only questions when refused: every one is refused, including
 "who am I" and "which app", so the block is on the token, the app or the
-portfolio, not on the Instagram account. Cause not yet known; the developer
-dashboard has to be read under the Facebook login, and that login would not hold
-in the Chrome that also holds the Instagram login for Business Suite. Until it
-is lifted the safety net above carries the posts. Posts scheduled in Business
+portfolio, not on the Instagram account. **Cause, found 2026-11-19:** Meta locked
+the developer account. developers.facebook.com shows "Account confirmation
+needed. We've noticed unusual activity on this developer account", and the way
+back is a Facebook checkpoint that emails a confirmation code to the account
+owner. Only the owner can do that. While the account is locked every token of
+its apps answers "API access blocked", and the Facebook sign-in screen's
+Continue button does nothing. Until it is lifted the safety net above carries
+the posts; afterwards run the workflow with `health_only` and expect
+`health: ok`. Posts scheduled in Business
 Suite are not affected: the 18 Nov post went out and the other eight are in place.
 
 **The one step never run is the final publish call**, because it posts at once. The
