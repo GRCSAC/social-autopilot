@@ -6,7 +6,7 @@ How @grcsac_studio gets its posts.
   2026-11-16. Meta publishes them; nothing in this repo has to run.
 - **From 9 Dec 2026:** `.github/workflows/studio.yml` posts through Meta's API,
   Mon/Wed/Fri at 11:00 Eastern, with no browser involved. See "The API route".
-- **When Meta's API refuses the token** (it has since 2026-11-18): a daily routine
+- **When Meta's API refuses the token** (it did from 2026-11-18 to 2026-11-19): a daily routine
   on the laptop schedules the coming week's posts in Meta Business Suite instead
   and records them here, so the API never posts on those dates as well. See "The
   safety net". The 9 Dec post was scheduled this way on 2026-11-19.
@@ -177,11 +177,16 @@ owner. Only the owner can do that. While the account is locked every token of
 its apps answers "API access blocked", and the Facebook sign-in screen's
 Continue button does nothing. Until it is lifted the safety net above carries
 the posts; afterwards run the workflow with `health_only` and expect
-`health: ok`. Posts scheduled in Business
+`health: ok`. **Lifted 2026-11-19 evening:** the owner completed the
+confirmation, `health_only` answered `health: ok (@grcsac_studio may publish)`
+with the same token (nothing was reissued), and the developer site's Required
+actions page is empty. If "API access blocked" returns, look at
+developers.facebook.com under the owner's Facebook login first. Posts scheduled in Business
 Suite are not affected: the 18 Nov post went out and the other eight are in place.
 
 **The one step never run is the final publish call**, because it posts at once. The
-first scheduled run on 2026-12-09 is the first real one.
+first scheduled API run is the first real one: Fri 2026-12-11, because 9 Dec was
+scheduled in Business Suite while the API was blocked and the gate skips it.
 
 **Generate token** opens a Facebook approval window (`facebook.com/.../dialog/oauth`)
 in a new browser window. That window is the account owner's to complete: browser
