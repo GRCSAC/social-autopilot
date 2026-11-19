@@ -209,11 +209,11 @@
   "app": "cinedrive",
   "name": "CineDrive",
   "platform": "iPhone + CarPlay",
-  "status": "Coming soon",
+  "status": "In development",
   "headline": "The films you already own, on the screen already in your car.",
   "sub": "Through CarPlay, while parked. The same film keeps playing as audio when you drive, and picks up where it left off when you stop.",
   "footer": "cinedrive.grcsac.com",
-  "caption": "Your own films, on the car screen, while parked.\n\nCineDrive plays the films you already own through CarPlay when the car is stopped, and keeps them playing as audio while you drive. A library built for a car, folders that behave, and posters you choose. The app makes no network requests at all.\n\nFree to try, $4.99 to keep. Coming soon.\n\ncinedrive.grcsac.com (link in bio)\n\n#carplay #roadtrip #movies #iphoneapp #comingsoon #grcsac"
+  "caption": "Your own films, on the car screen, while parked.\n\nCineDrive plays the films you already own through CarPlay when the car is stopped, and keeps them playing as audio while you drive. Video on the car screen also needs a car maker to turn on CarPlay's video support, and none has publicly shipped it yet. A library built for a car, folders that behave, and posters you choose. The app makes no network requests at all.\n\nFree to try, $4.99 to keep. In development, not yet on the App Store.\n\ncinedrive.grcsac.com (link in bio)\n\n#carplay #roadtrip #movies #iphoneapp #indevelopment #grcsac"
  },
  {
   "id": "ig-studio-iw-reel-1",
@@ -497,7 +497,7 @@
   "app": "cinedrive",
   "name": "CineDrive",
   "platform": "iPhone + CarPlay",
-  "status": "Coming soon",
+  "status": "In development",
   "headline": "We would rather say it plainly.",
   "sub": "Video on the car screen is new in iOS 27 and each car maker has to switch it on. Until one does, CineDrive plays your film as audio in the car, and the picture waits.",
   "footer": "cinedrive.grcsac.com",
@@ -601,5 +601,103 @@
   "sub": "A small public repo renders these cards and queues them every week. No servers, no logins. Read how it works.",
   "footer": "github.com/GRCSAC/social-autopilot",
   "caption": "The posts on this account are rendered and queued by a public GitHub repo.\n\nEvery week a small Python job picks the next posts, draws the cards from bundled fonts, commits the images, and hands them to Buffer by URL. No servers, no logins, no manual uploads. The repo is public so the images can be served for free.\n\ngithub.com/GRCSAC/social-autopilot (link in bio)\n\n#github #automation #python #opensource #buildinpublic #grcsac"
+ },
+ {
+  "id": "ig-studio-zelzi-2",
+  "app": "zelzi",
+  "name": "Zelzi",
+  "platform": "iPhone",
+  "status": "In development",
+  "footer": "games.grcsac.com",
+  "slides": [
+   {
+    "headline": "Same cards. Three different promises.",
+    "sub": "Before every match in Zelzi, you pick the contract the game is played under."
+   },
+   {
+    "headline": "Sandbox. Play with anything.",
+    "sub": "A card that breaks the budget is flagged, and still plays."
+   },
+   {
+    "headline": "Standardized. Fair and repeatable.",
+    "sub": "Every card and deck fits a budget. A card that does not shows the reason and the fix."
+   },
+   {
+    "headline": "Free for All. No caps at all.",
+    "sub": "No budget and no warnings. Only what the engine cannot run is refused."
+   }
+  ],
+  "caption": "Pick the rules before you deal.\n\nZelzi lets you choose how each match is played: Sandbox, Standardized or Free for All. The contract never rewrites a card. It keeps its numbers, and the result screen always says which rules the match was played under.\n\nIn development for iPhone, being tested on TestFlight.\n\ngames.grcsac.com (link in bio)\n\n#cardgame #indiegame #iphonegame #gamedesign #gamedev #grcsac"
+ },
+ {
+  "id": "ig-studio-earnest-2",
+  "app": "earnest",
+  "name": "Earnest",
+  "platform": "iPhone",
+  "status": "Coming soon",
+  "headline": "Every photo shows the month it was added.",
+  "sub": "What you are looking at is current, or it says plainly that it is not.",
+  "footer": "earnest.grcsac.com",
+  "caption": "Looking like your photos is part of the deal.\n\nEvery profile photo on Earnest carries the month it was added. What you are looking at is current, or it says plainly that it is not, so nobody has to guess which year a picture is from.\n\nEarnest is in development and coming soon for iPhone. Details may change before launch.\n\nearnest.grcsac.com (link in bio)\n\n#datingapp #onlinedating #honesty #comingsoon #grcsac"
+ },
+ {
+  "id": "ig-studio-cinedrive-3",
+  "app": "cinedrive",
+  "name": "CineDrive",
+  "platform": "iPhone + CarPlay",
+  "status": "In development",
+  "footer": "cinedrive.grcsac.com",
+  "headline": "Hidden films stay off the car screen.",
+  "sub": "Behind Face ID, a hidden film leaves the grid, search and every CarPlay list. The Lock Screen shows only \"Private film\".",
+  "caption": "Some films are just for you.\n\nHide one in CineDrive and it sits behind Face ID. It leaves the grid, search and every CarPlay list, so it never reaches the car screen, and the Lock Screen shows only \"Private film\", with no artwork.\n\nCineDrive is in development for iPhone. Video on the car screen also needs a car maker to turn on CarPlay's video support, and none has publicly shipped it yet.\n\ncinedrive.grcsac.com (link in bio)\n\n#carplay #privacy #movies #iphoneapp #indevelopment #grcsac"
+ },
+ {
+  "id": "ig-studio-cinedrive-4",
+  "app": "cinedrive",
+  "name": "CineDrive",
+  "platform": "iPhone + CarPlay",
+  "status": "In development",
+  "footer": "cinedrive.grcsac.com",
+  "headline": "MKV, AVI, WebM. Converted once.",
+  "sub": "If the phone cannot play a film as it is, CineDrive converts it when you add it. After that it is an ordinary film in your library.",
+  "caption": "Not every film file plays on an iPhone. That is CineDrive's problem, not yours.\n\nAdd a film from Files, iCloud Drive, a USB drive, an SD reader or your Photos library. CineDrive works out whether the phone can play it, converts it once if not, and copies it into its own storage, so it keeps playing even if the original is gone.\n\nIn development for iPhone.\n\ncinedrive.grcsac.com (link in bio)\n\n#movies #mkv #iphoneapp #carplay #indevelopment #grcsac"
+ },
+ {
+  "id": "ig-studio-nextfix-4",
+  "app": "nextfix",
+  "name": "NextFix",
+  "platform": "Windows, macOS, Linux",
+  "status": "Free + open source",
+  "footer": "nextfix.grcsac.com",
+  "slides": [
+   {
+    "headline": "Every finding lands in one of four buckets.",
+    "sub": "One decision per vulnerability, each with a plain-English reason."
+   },
+   {
+    "headline": "Act. Fix now.",
+    "sub": "An outsider can reach the flawed code, with no login in the way or with exploits already seen in the wild."
+   },
+   {
+    "headline": "Attend. Fix next cycle.",
+    "sub": "Reachable from outside, but a login is in the way or there is no sign anyone is exploiting it yet."
+   },
+   {
+    "headline": "Track. Watch, or set aside.",
+    "sub": "No outside request reaches it today, or the flawed function is never called. Each set-aside gets a written reason."
+   }
+  ],
+  "caption": "Fix now, fix next, watch, set aside.\n\nNextFix sorts each vulnerability a scanner reports into one of four buckets and writes down why. Watched items are re-checked against fresh exploit data. The set-asides go into an OpenVEX document that auditors and tools such as Dependency-Track accept.\n\nFree and open source under Apache 2.0.\n\nnextfix.grcsac.com (link in bio)\n\n#appsec #vulnerabilitymanagement #devsecops #openvex #opensource #grcsac"
+ },
+ {
+  "id": "ig-studio-pavlove-5",
+  "app": "pavlove",
+  "name": "PavLove",
+  "platform": "iPhone + Apple Watch",
+  "status": "On the App Store",
+  "headline": "Short, long, short. That tap is PavLove.",
+  "sub": "The rhythm belongs to PavLove alone, so you never mistake it for a message.",
+  "footer": "pavlove.grcsac.com",
+  "caption": "You will know it is not a text.\n\nPavLove reads the motion of your wrist fifty times a second, watching for the arc of a hand travelling to a mouth. When it catches one, you feel a short, long, short tap while you can still choose. No other alert feels like it.\n\nOn the App Store for iPhone and Apple Watch.\n\npavlove.grcsac.com (link in bio)\n\n#applewatch #haptics #habits #mindfuleating #applewatchapp #grcsac"
  }
 ]
