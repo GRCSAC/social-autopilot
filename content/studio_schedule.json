@@ -16,6 +16,13 @@
    "scheduled_on": "2026-11-16"
   },
   {
+   "id": "ig-studio-fitthis-reel-1",
+   "date": "2026-11-20",
+   "time": "19:00",
+   "scheduled_on": "2026-11-20",
+   "via": "api"
+  },
+  {
    "id": "ig-studio-siftlet-1",
    "date": "2026-11-23",
    "time": "11:00",
