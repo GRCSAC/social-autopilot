@@ -229,17 +229,39 @@ cancelling a post scheduled in Business Suite". All nine were checked on
 
 ### How the schedule runs
 
-- The workflow is set to fire every hour, at seven minutes past. It has to be
-  that often because **GitHub starts this repository's scheduled runs late**:
-  between twenty minutes and seven hours late in every run since July 2026, and
-  some never start. On 2026-11-20 the run meant for 11:07 started at 17:11.
-- So a run does not post when it happens to start. `python ig_studio.py wait`
-  looks for today's next free slot. If it is at most five hours away, the run
-  sleeps until the slot's exact time and then carries on, so the post goes out
-  at 11:00 or 19:00 New York time whatever GitHub's delay was. If another run
-  is already waiting for that slot, or the slot is further off, the run does
-  not wait. The wait happens in a job of its own that holds no lock, so a
-  health check or a rehearsal started by hand in the meantime runs at once.
+- **GitHub starts this repository's scheduled runs late**: between twenty
+  minutes and seven hours late in every run since July 2026, and some never
+  start. On 2026-11-20 the run meant for 11:07 started at 17:11 and the 19:00
+  slot was still empty at 20:40. So the workflow does not rely on GitHub's
+  schedule for its timing. It keeps its own clock.
+- **The clock.** Every scheduled run ends by working out how far away the next
+  free slot is (`python ig_studio.py relay`) and parking a last job, `relay`,
+  on a GitHub environment that has a wait timer: `studio-wait-900`, `-480`,
+  `-240`, `-120`, `-60` or `-30`, the number being the minutes. GitHub holds
+  that job for the timer's length without using a runner, and then the job
+  starts the next run. The timer chosen is the largest that still ends four
+  minutes before the slot, so two or three hops bring a run in a few minutes
+  ahead of it. That run sleeps the remainder (`python ig_studio.py wait`, at
+  most 45 minutes) and posts on the slot. Then it books the run for the slot
+  after. Only one run at a time does this: a run that finds another already
+  parked on a timer or sleeping leaves it to that one.
+- **The environments are part of the mechanism.** They are in the repository's
+  settings under Environments. If one is deleted or its timer changed, the
+  `relay` job notices that it was not held for long enough, starts nothing and
+  shows a warning, so the chain can never become runs starting each other in a
+  loop. To put one back:
+  `gh api -X PUT repos/GRCSAC/social-autopilot/environments/studio-wait-60 -F wait_timer=60`.
+- **The hourly schedule is the safety net.** The workflow is also set to fire
+  every hour at seven minutes past. Whenever GitHub does start one of those
+  runs, it posts into a slot nobody filled (late, up to midnight New York
+  time), and if no run is on its way to the next slot it starts the chain
+  again. Otherwise it stops after a few seconds.
+- **After a failure.** A scheduled run that fails notes the time in
+  `content/state.json` (`studio_attempt_failed`). The next run holds off until
+  25 minutes after a single failure, and three hours after the latest once
+  there have been two within six hours, so a refused token costs a few failed
+  runs a day and not one an hour. For two hours after a slot the clock comes
+  back every 30 minutes to try again. A successful post clears the note.
 - `python ig_studio.py gate` decides whether a run posts. It looks for the
   earliest of today's two slots whose hour has come and which has no entry in
   `content/studio_schedule.json`. If there is one, and the date is not before
@@ -247,8 +269,8 @@ cancelling a post scheduled in Business Suite". All nine were checked on
   waiting, the run posts. So the first run at or after a slot fills it, the
   later ones find it filled and stop, and a run that failed or never started is
   made up by the next one. A slot nobody filled on time is therefore filled
-  late, by the first run that starts after it, up to midnight New York time. That same rule keeps the API off slots filled in
-  Business Suite.
+  late, by the first run that starts after it, up to midnight New York time.
+  That same rule keeps the API off slots filled in Business Suite.
 - A run posts one item: the first in `content/studio_instagram.json` whose id is
   not in the ledger, preferring an app that is not already posting that day and
   did not have the previous post. It then writes the post into the ledger and
@@ -263,9 +285,10 @@ cancelling a post scheduled in Business Suite". All nine were checked on
   `check_only`, `dry_run`, `probe` or `health_only`, or fill in `rehearse`,
   unless that is what you want.
 - `as_scheduled` makes a run started by hand behave exactly like a scheduled
-  one: it waits for a slot up to five hours away and posts only into a slot
-  that is due and free. It is the box to use if something other than GitHub's
-  own clock is ever set up to start the workflow on time.
+  one: it posts only into a slot that is due and free, sleeps if a slot is
+  minutes away, and books the next run. It is how the clock's own runs are
+  started, and the way to restart the clock by hand:
+  `gh workflow run studio.yml -f as_scheduled=true`.
 
 ### What a library item can be
 

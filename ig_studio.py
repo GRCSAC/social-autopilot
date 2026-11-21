@@ -17,6 +17,8 @@ Two kinds of token work, and the script finds out which one it was given:
 
   python ig_studio.py check     # who the token belongs to, may it publish, latest posts
   python ig_studio.py wait      # seconds until the next free slot, if it is close (writes seconds=N)
+  python ig_studio.py relay     # which delay timer brings the next run in before the next slot
+  python ig_studio.py failed    # note that a scheduled run failed, so the next ones hold off
   python ig_studio.py gate      # is a slot due and free right now? (writes go=true/false)
   python ig_studio.py build     # render the next post into public/cards + _studio_batch.json
   python ig_studio.py publish   # wait for the media URL, publish, write the ledger
@@ -78,7 +80,12 @@ QUEUE = ROOT / "preview" / "queue"
 SLOTS = (11, 19)                # hours in America/New_York: two posts a day, every day
 FAILED = "studio_failed"        # state.json: how often Meta refused each waiting item
 PARK_AFTER = 3                  # refusals before an item is set aside so the queue moves on
-WAIT_MAX = 5 * 3600             # a run that starts this close before a slot waits for it
+WAIT_MAX = 45 * 60              # a run that starts this close before a slot sleeps until it
+RELAY_TIMERS = (900, 480, 240, 120, 60, 30)   # minutes; GitHub environments studio-wait-<N>
+RELAY_LEAD = 4                  # minutes before the slot that the last relayed run should start
+RETRY_FOR = 120                 # minutes after a slot during which a failed post is retried
+FAIL_LOG = "studio_attempt_failed"   # state.json: when scheduled runs last failed (UTC)
+HOLD_FIRST, HOLD_AGAIN = 25, 180     # minutes to hold off after one failure, after two or more
 BATCH = ROOT / "_studio_batch.json"
 TOKEN_FILE = ROOT / "content" / "ig_studio_token.enc"
 
@@ -346,31 +353,98 @@ def _by_schedule():
 
 
 def _already_waiting():
-    """The id of another run of this workflow that has been going for more
-    than three minutes, which is a run sitting out the wait for the slot. One
-    run waiting is enough. Any trouble asking GitHub counts as "none"."""
+    """The id of another run of this workflow that is on its way to the next
+    slot: one parked on a delay timer (status "waiting"), or one that has been
+    going for more than three minutes, which is a run sleeping until the slot.
+    One is enough. Any trouble asking GitHub counts as "none"."""
     import subprocess
     try:
         out = subprocess.run(
             ["gh", "run", "list", "--repo", os.environ["GITHUB_REPOSITORY"],
-             "--workflow", "studio.yml", "--status", "in_progress",
-             "--json", "databaseId,createdAt", "--limit", "20"],
+             "--workflow", "studio.yml", "--json", "databaseId,createdAt,status", "--limit", "30"],
             capture_output=True, text=True, timeout=60, check=True).stdout
         me = os.environ.get("GITHUB_RUN_ID", "")
         for r in json.loads(out):
+            if str(r["databaseId"]) == me:
+                continue
             made = datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00"))
-            if str(r["databaseId"]) != me and (datetime.now(timezone.utc) - made).total_seconds() > 180:
+            old = (datetime.now(timezone.utc) - made).total_seconds() > 180
+            if r["status"] == "waiting" or (r["status"] == "in_progress" and old):
                 return r["databaseId"]
     except Exception:
         pass
     return None
 
 
+def _emit(**kv):
+    """Step outputs for the workflow."""
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a", encoding="utf-8") as f:
+            for k, v in kv.items():
+                f.write(k + "=" + str(v) + chr(10))
+
+
+def _minutes_until(now, at):
+    return (at.astimezone(timezone.utc) - now.astimezone(timezone.utc)).total_seconds() / 60
+
+
+def _relay_plan(now, led, others=_already_waiting):
+    """Which delay timer the run should hand over to, and why. GitHub's own
+    schedule starts runs hours late, so the workflow keeps its own time: a run
+    ends by parking a last job on a GitHub environment with a wait timer
+    (studio-wait-<minutes>), and when the timer is up that job starts the next
+    run. The timer is the largest that still ends RELAY_LEAD minutes before
+    the next free slot, so a few hops bring a run in just before the slot,
+    where `wait` sleeps the remainder. Returns (minutes, why); 0 = no relay."""
+    today = now.date().isoformat()
+    start = CONFIG.get("studio", {}).get("api_start", "")
+    taken = {(r["date"], r["time"]) for r in led["scheduled"]}
+    if not (start and today < start):
+        for h in SLOTS:                   # a slot that should have been filled just now
+            at = now.replace(hour=h, minute=0, second=0, microsecond=0)
+            late = -_minutes_until(now, at)
+            if (today, f"{h}:00") not in taken and 0 <= late < RETRY_FOR:
+                if others():
+                    return 0, "another run is already on its way"
+                return RELAY_TIMERS[-1], f"the {h}:00 slot is still empty; trying again"
+    for d in range(0, 4):
+        day = now + timedelta(days=d)
+        iso = day.date().isoformat()
+        if start and iso < start:
+            continue
+        for h in SLOTS:
+            at = day.replace(hour=h, minute=0, second=0, microsecond=0)
+            left = _minutes_until(now, at) - RELAY_LEAD
+            if (iso, f"{h}:00") in taken or _minutes_until(now, at) <= 0:
+                continue
+            fit = [t for t in RELAY_TIMERS if t <= left]
+            if others():
+                return 0, "another run is already on its way"
+            if not fit:                   # only when an older slot is still empty: come back late
+                return RELAY_TIMERS[-1], f"the {iso} {h}:00 slot is closer than any timer"
+            return fit[0], f"towards the {iso} {h}:00 slot"
+    return 0, "no free slot in the next days"
+
+
+def relay():
+    """Last step of a scheduled run: name the environment whose timer brings
+    the next run in. Any error means no relay; the hourly schedule then
+    starts the chain again."""
+    try:
+        mins, why = _relay_plan(_now(), _ledger()) if _by_schedule() else (0, "started by hand")
+    except Exception as e:                # noqa: BLE001 - never fail the run over this
+        mins, why = 0, f"could not plan the next run ({type(e).__name__})"
+    print(f"relay: {f'{mins} minutes' if mins else 'none'} ({why})")
+    _emit(env=f"studio-wait-{mins}" if mins else "", minutes=mins, at=int(time.time()))
+    return mins
+
+
 def _wait_seconds(now, led, others=_already_waiting):
     """How long a run that has just started should sit before the gate is
-    asked, and why. GitHub starts scheduled runs late, often by hours, so the
-    workflow fires every hour and a run that starts within WAIT_MAX before a
-    free slot waits for the slot's exact time. 0 means go straight on: a slot
+    asked, and why. A run that starts within WAIT_MAX before a free slot
+    sleeps until the slot's exact time; `relay` is what brings a run in that
+    close. 0 means go straight on: a slot
     is already due (the gate posts now), or nothing is close (the gate skips)."""
     today = now.date().isoformat()
     start = CONFIG.get("studio", {}).get("api_start", "")
@@ -383,9 +457,9 @@ def _wait_seconds(now, led, others=_already_waiting):
         if f"{h}:00" in taken or now.hour >= h:
             continue
         at = now.replace(hour=h, minute=0, second=0, microsecond=0)
-        secs = int((at.astimezone(timezone.utc) - now.astimezone(timezone.utc)).total_seconds()) + 5
+        secs = int(_minutes_until(now, at) * 60) + 5
         if secs > WAIT_MAX:
-            return 0, f"the next free slot, {h}:00, is more than {WAIT_MAX // 3600} hours away"
+            return 0, f"the next free slot, {h}:00, is more than {WAIT_MAX // 60} minutes away"
         if not _waiting(_load_lib(), led, _state()):
             return 0, "every item in the library has been posted"
         other = others()
@@ -404,11 +478,37 @@ def wait():
     except Exception as e:                # noqa: BLE001 - a broken wait must not stop the post
         secs, why = 0, f"could not work out the wait ({type(e).__name__})"
     print(f"wait: {secs} seconds ({why})")
-    out = os.environ.get("GITHUB_OUTPUT")
-    if out:
-        with open(out, "a", encoding="utf-8") as f:
-            f.write(f"seconds={secs}\n")
+    _emit(seconds=secs)
     return secs
+
+
+def _holding_off(state):
+    """After a scheduled run fails, the next ones hold off: 25 minutes after a
+    single failure, three hours once there have been two within six hours.
+    A refused token then costs a few failed runs a day instead of one an hour.
+    Returns the reason, or None."""
+    now = datetime.now(timezone.utc)
+    ages = sorted((now - datetime.fromisoformat(x)).total_seconds() / 60
+                  for x in state.get(FAIL_LOG, []))
+    ages = [a for a in ages if a < 360]
+    if not ages:
+        return None
+    hold = HOLD_FIRST if len(ages) == 1 else HOLD_AGAIN
+    if ages[0] < hold:
+        return (f"the last attempt failed {int(ages[0])} minutes ago; "
+                f"holding off for {hold} minutes after it")
+    return None
+
+
+def failed():
+    """Run by the workflow when a scheduled run fails: note the time, so the
+    gate can hold off (see _holding_off)."""
+    state = _state()
+    log = list(state.get(FAIL_LOG, []))[-5:]
+    log.append(datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    state[FAIL_LOG] = log
+    STATE.write_text(json.dumps(state, indent=2) + chr(10), encoding="utf-8")
+    print(f"noted the failed attempt ({len(log)} on record)")
 
 
 def gate():
@@ -429,6 +529,8 @@ def gate():
     elif slot is None:
         go, why = False, (f"no slot is due and free on {today} "
                           f"(slots {' and '.join(f'{h}:00' for h in SLOTS)} New York)")
+    elif _holding_off(_state()):
+        go, why = False, _holding_off(_state())
     elif not _waiting(_load_lib(), led, _state()):
         go, why = False, "every item in the library has been posted; nothing is repeated"
         print("::warning::Studio Instagram has no new posts left. "
@@ -687,7 +789,9 @@ def publish():
         return
     if posted:
         _record(posted)
-    if refused != state.get(FAILED, {}):
+    if refused != state.get(FAILED, {}) or (posted and state.get(FAIL_LOG)):
+        if posted:
+            state.pop(FAIL_LOG, None)
         if refused:
             state[FAILED] = refused
         else:
@@ -926,5 +1030,5 @@ if __name__ == "__main__":
         if cmd == "angles":
             angles(sys.argv[2] if len(sys.argv) > 2 else None)
         else:
-            {"check": check, "wait": wait, "gate": gate, "build": build, "publish": publish,
+            {"check": check, "wait": wait, "relay": relay, "failed": failed, "gate": gate, "build": build, "publish": publish,
              "probe": probe, "health": health, "stock": stock, "lint": lint}[cmd]()

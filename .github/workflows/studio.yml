@@ -8,13 +8,13 @@ name: Studio Instagram
 
 on:
   schedule:
-    # Every hour, because GitHub starts this repository's scheduled runs late,
-    # by anything from twenty minutes to seven hours, and drops some. A run
-    # that starts within five hours before a free slot waits for the slot
-    # (`ig_studio.py wait`), so the post goes out on time; a run that starts
-    # after a slot nobody filled posts straight away (`ig_studio.py gate`);
-    # every other run stops after a few seconds. Six lines rather than one, in
-    # case a late line only ever yields one run.
+    # GitHub starts this repository's scheduled runs late, by anything from
+    # twenty minutes to seven hours, and drops some. So the workflow keeps its
+    # own time: each run ends by parking a job on a delay timer that starts
+    # the next run just before the next slot (job "relay" below). These hourly
+    # lines are only the safety net: they start that chain if it ever stops,
+    # and a run that starts after a slot nobody filled posts straight away.
+    # Six lines rather than one, in case a late line only ever yields one run.
     - cron: "7 0,6,12,18 * * *"
     - cron: "7 1,7,13,19 * * *"
     - cron: "7 2,8,14,20 * * *"
@@ -44,22 +44,22 @@ on:
         type: boolean
         default: false
       as_scheduled:
-        description: "Act like a scheduled run: wait for a slot up to five hours away, post only into a due, free slot"
+        description: "Act like a scheduled run: post only into a due, free slot, sleep if one is minutes away, and book the next run"
         type: boolean
         default: false
 
 permissions:
   contents: write
-  actions: read
+  actions: write        # the relay job starts the next run
 
 jobs:
-  # Sits out the time until the slot, when one is close. It only delays: it
-  # holds no lock, so a health check or a rehearsal started meanwhile is not
+  # Sleeps until the slot when one is at most 45 minutes away. It only delays:
+  # it holds no lock, so a health check or a rehearsal started meanwhile is not
   # kept waiting, and whatever happens here the gate in the next job decides.
   wait:
     if: ${{ github.event_name == 'schedule' || inputs.as_scheduled }}
     runs-on: ubuntu-latest
-    timeout-minutes: 330
+    timeout-minutes: 60
     env:
       AS_SCHEDULED: ${{ (github.event_name == 'workflow_dispatch' && inputs.as_scheduled) && '1' || '' }}
       GH_TOKEN: ${{ github.token }}
@@ -85,8 +85,13 @@ jobs:
     concurrency:
       group: social-autopilot
       cancel-in-progress: false
+    outputs:
+      relay_env: ${{ steps.relay.outputs.env }}
+      relay_minutes: ${{ steps.relay.outputs.minutes }}
+      relay_at: ${{ steps.relay.outputs.at }}
     env:
       AS_SCHEDULED: ${{ (github.event_name == 'workflow_dispatch' && inputs.as_scheduled) && '1' || '' }}
+      GH_TOKEN: ${{ github.token }}
       PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
       IG_STUDIO_TOKEN: ${{ secrets.IG_STUDIO_TOKEN }}
       IG_STUDIO_TOKEN_KEY: ${{ secrets.IG_STUDIO_TOKEN_KEY }}
@@ -141,6 +146,10 @@ jobs:
         if: ${{ steps.gate.outputs.go == 'true' && !inputs.check_only && !inputs.probe && !inputs.health_only }}
         run: python ig_studio.py publish
 
+      - name: Note a failed scheduled run (the next ones hold off)
+        if: ${{ failure() && steps.gate.outputs.go == 'true' && (github.event_name == 'schedule' || inputs.as_scheduled) && env.DRY_RUN != '1' && env.REHEARSE == '' }}
+        run: python ig_studio.py failed
+
       - name: Save ledger, state and refreshed token
         if: ${{ always() && steps.gate.outputs.go == 'true' }}
         run: |
@@ -155,3 +164,33 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      - name: Which timer brings the next run in?
+        id: relay
+        if: ${{ always() && (github.event_name == 'schedule' || (inputs.as_scheduled && !inputs.dry_run && !inputs.check_only && !inputs.probe && !inputs.health_only && inputs.rehearse == '')) }}
+        run: python ig_studio.py relay
+
+  # The workflow's own clock. The environment named by the job above
+  # (studio-wait-30 ... studio-wait-900) has a wait timer of that many minutes,
+  # set in the repository's settings; GitHub holds this job for that long
+  # without using a runner, and then it starts the next run. If the timer did
+  # not hold (the environment was removed or changed), nothing is started, so
+  # this can never turn into a loop of runs starting each other.
+  relay:
+    needs: run
+    if: ${{ !cancelled() && needs.run.outputs.relay_env != '' }}
+    runs-on: ubuntu-latest
+    environment: ${{ needs.run.outputs.relay_env }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Start the next run
+        run: |
+          waited=$(( $(date +%s) - ${{ needs.run.outputs.relay_at }} ))
+          need=$(( ${{ needs.run.outputs.relay_minutes }} * 48 ))
+          echo "held for $waited seconds on ${{ needs.run.outputs.relay_env }}"
+          if [ "$waited" -lt "$need" ]; then
+            echo "::warning::The wait timer on ${{ needs.run.outputs.relay_env }} did not hold ($waited s). No run started; see STUDIO-SCHEDULING.md."
+            exit 0
+          fi
+          gh workflow run studio.yml --repo "$GITHUB_REPOSITORY" --ref main -f as_scheduled=true
