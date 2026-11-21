@@ -16,6 +16,7 @@ Two kinds of token work, and the script finds out which one it was given:
               account's Instagram ID in IG_STUDIO_USER_ID.
 
   python ig_studio.py check     # who the token belongs to, may it publish, latest posts
+  python ig_studio.py wait      # seconds until the next free slot, if it is close (writes seconds=N)
   python ig_studio.py gate      # is a slot due and free right now? (writes go=true/false)
   python ig_studio.py build     # render the next post into public/cards + _studio_batch.json
   python ig_studio.py publish   # wait for the media URL, publish, write the ledger
@@ -77,6 +78,7 @@ QUEUE = ROOT / "preview" / "queue"
 SLOTS = (11, 19)                # hours in America/New_York: two posts a day, every day
 FAILED = "studio_failed"        # state.json: how often Meta refused each waiting item
 PARK_AFTER = 3                  # refusals before an item is set aside so the queue moves on
+WAIT_MAX = 5 * 3600             # a run that starts this close before a slot waits for it
 BATCH = ROOT / "_studio_batch.json"
 TOKEN_FILE = ROOT / "content" / "ig_studio_token.enc"
 
@@ -336,18 +338,91 @@ def _open_slot(now, led, due_only=True):
     return None
 
 
+def _by_schedule():
+    """True for a run GitHub started on the schedule, and for one started by
+    hand with the "as_scheduled" box, which asks to be treated the same."""
+    return (os.environ.get("GITHUB_EVENT_NAME", "schedule") == "schedule"
+            or os.environ.get("AS_SCHEDULED") == "1")
+
+
+def _already_waiting():
+    """The id of another run of this workflow that has been going for more
+    than three minutes, which is a run sitting out the wait for the slot. One
+    run waiting is enough. Any trouble asking GitHub counts as "none"."""
+    import subprocess
+    try:
+        out = subprocess.run(
+            ["gh", "run", "list", "--repo", os.environ["GITHUB_REPOSITORY"],
+             "--workflow", "studio.yml", "--status", "in_progress",
+             "--json", "databaseId,createdAt", "--limit", "20"],
+            capture_output=True, text=True, timeout=60, check=True).stdout
+        me = os.environ.get("GITHUB_RUN_ID", "")
+        for r in json.loads(out):
+            made = datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00"))
+            if str(r["databaseId"]) != me and (datetime.now(timezone.utc) - made).total_seconds() > 180:
+                return r["databaseId"]
+    except Exception:
+        pass
+    return None
+
+
+def _wait_seconds(now, led, others=_already_waiting):
+    """How long a run that has just started should sit before the gate is
+    asked, and why. GitHub starts scheduled runs late, often by hours, so the
+    workflow fires every hour and a run that starts within WAIT_MAX before a
+    free slot waits for the slot's exact time. 0 means go straight on: a slot
+    is already due (the gate posts now), or nothing is close (the gate skips)."""
+    today = now.date().isoformat()
+    start = CONFIG.get("studio", {}).get("api_start", "")
+    if start and today < start:
+        return 0, f"before the API start date {start}"
+    if _open_slot(now, led) is not None:
+        return 0, "a slot is due and free now"
+    taken = {r["time"] for r in led["scheduled"] if r["date"] == today}
+    for h in SLOTS:
+        if f"{h}:00" in taken or now.hour >= h:
+            continue
+        at = now.replace(hour=h, minute=0, second=0, microsecond=0)
+        secs = int((at.astimezone(timezone.utc) - now.astimezone(timezone.utc)).total_seconds()) + 5
+        if secs > WAIT_MAX:
+            return 0, f"the next free slot, {h}:00, is more than {WAIT_MAX // 3600} hours away"
+        if not _waiting(_load_lib(), led, _state()):
+            return 0, "every item in the library has been posted"
+        other = others()
+        if other:
+            return 0, f"run {other} is already waiting for the {h}:00 slot"
+        return secs, f"waiting for the {h}:00 slot"
+    return 0, "no free slot is left today"
+
+
+def wait():
+    """First step of a scheduled run: print how many seconds to sleep so the
+    post goes out on the slot. It only delays; the gate still decides. Any
+    error here means no wait, never a failed run."""
+    try:
+        secs, why = _wait_seconds(_now(), _ledger()) if _by_schedule() else (0, "started by hand")
+    except Exception as e:                # noqa: BLE001 - a broken wait must not stop the post
+        secs, why = 0, f"could not work out the wait ({type(e).__name__})"
+    print(f"wait: {secs} seconds ({why})")
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a", encoding="utf-8") as f:
+            f.write(f"seconds={secs}\n")
+    return secs
+
+
 def gate():
     """Decide whether a scheduled run posts now. Slots are 11:00 and 19:00
-    New York time, every day; the workflow fires a few times around each so
-    one run lands on the hour in winter and in summer time and the next one
-    retries a failure. A slot already in the ledger (scheduled in Business
+    New York time, every day; the workflow fires every hour, a run that starts
+    shortly before a slot waits for it (see wait), and one that starts after
+    a slot nobody filled catches it up. A slot already in the ledger (scheduled in Business
     Suite, or already published by this workflow) is never posted to twice."""
     now = _now()
     today = now.date().isoformat()
     start = CONFIG.get("studio", {}).get("api_start", "")
     led = _ledger()
     slot = _open_slot(now, led)
-    if os.environ.get("GITHUB_EVENT_NAME", "schedule") != "schedule":
+    if not _by_schedule():
         go, why = True, "started by hand"
     elif start and today < start:
         go, why = False, f"before the API start date {start}"
@@ -851,5 +926,5 @@ if __name__ == "__main__":
         if cmd == "angles":
             angles(sys.argv[2] if len(sys.argv) > 2 else None)
         else:
-            {"check": check, "gate": gate, "build": build, "publish": publish,
+            {"check": check, "wait": wait, "gate": gate, "build": build, "publish": publish,
              "probe": probe, "health": health, "stock": stock, "lint": lint}[cmd]()

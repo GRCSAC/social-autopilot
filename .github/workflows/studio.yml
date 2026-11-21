@@ -8,13 +8,19 @@ name: Studio Instagram
 
 on:
   schedule:
-    # Every day, three runs around each slot. 11:00 New York is 16:00 UTC in
-    # winter and 15:00 UTC in summer; 19:00 New York is 00:00 or 23:00 UTC.
-    # `ig_studio.py gate` lets the first run at or after the slot post, and the
-    # later ones only if that slot is still empty, so a failed or dropped run
-    # is retried within the hour. Minute 7 keeps clear of GitHub's busy hour mark.
-    - cron: "7 15,16,17 * * *"
-    - cron: "7 23,0,1 * * *"
+    # Every hour, because GitHub starts this repository's scheduled runs late,
+    # by anything from twenty minutes to seven hours, and drops some. A run
+    # that starts within five hours before a free slot waits for the slot
+    # (`ig_studio.py wait`), so the post goes out on time; a run that starts
+    # after a slot nobody filled posts straight away (`ig_studio.py gate`);
+    # every other run stops after a few seconds. Six lines rather than one, in
+    # case a late line only ever yields one run.
+    - cron: "7 0,6,12,18 * * *"
+    - cron: "7 1,7,13,19 * * *"
+    - cron: "7 2,8,14,20 * * *"
+    - cron: "7 3,9,15,21 * * *"
+    - cron: "7 4,10,16,22 * * *"
+    - cron: "7 5,11,17,23 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -37,18 +43,50 @@ on:
         description: "Only report whether Meta's API accepts the token (never fails, publishes nothing)"
         type: boolean
         default: false
+      as_scheduled:
+        description: "Act like a scheduled run: wait for a slot up to five hours away, post only into a due, free slot"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
-
-concurrency:
-  group: social-autopilot
-  cancel-in-progress: false
+  actions: read
 
 jobs:
-  run:
+  # Sits out the time until the slot, when one is close. It only delays: it
+  # holds no lock, so a health check or a rehearsal started meanwhile is not
+  # kept waiting, and whatever happens here the gate in the next job decides.
+  wait:
+    if: ${{ github.event_name == 'schedule' || inputs.as_scheduled }}
     runs-on: ubuntu-latest
+    timeout-minutes: 330
     env:
+      AS_SCHEDULED: ${{ (github.event_name == 'workflow_dispatch' && inputs.as_scheduled) && '1' || '' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: How long until the next free slot?
+        id: plan
+        run: python ig_studio.py wait
+
+      - name: Wait for the slot
+        if: ${{ steps.plan.outputs.seconds != '' && steps.plan.outputs.seconds != '0' }}
+        run: sleep ${{ steps.plan.outputs.seconds }}
+
+  run:
+    needs: wait
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: social-autopilot
+      cancel-in-progress: false
+    env:
+      AS_SCHEDULED: ${{ (github.event_name == 'workflow_dispatch' && inputs.as_scheduled) && '1' || '' }}
       PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
       IG_STUDIO_TOKEN: ${{ secrets.IG_STUDIO_TOKEN }}
       IG_STUDIO_TOKEN_KEY: ${{ secrets.IG_STUDIO_TOKEN_KEY }}

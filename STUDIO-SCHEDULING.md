@@ -229,16 +229,25 @@ cancelling a post scheduled in Business Suite". All nine were checked on
 
 ### How the schedule runs
 
-- The workflow fires every day at 15:07, 16:07 and 17:07 UTC and at 23:07,
-  00:07 and 01:07 UTC. 11:00 in New York is 16:00 UTC in winter and 15:00 UTC in
-  summer; 19:00 is 00:00 or 23:00 UTC. GitHub may start a scheduled run late.
+- The workflow is set to fire every hour, at seven minutes past. It has to be
+  that often because **GitHub starts this repository's scheduled runs late**:
+  between twenty minutes and seven hours late in every run since July 2026, and
+  some never start. On 2026-11-20 the run meant for 11:07 started at 17:11.
+- So a run does not post when it happens to start. `python ig_studio.py wait`
+  looks for today's next free slot. If it is at most five hours away, the run
+  sleeps until the slot's exact time and then carries on, so the post goes out
+  at 11:00 or 19:00 New York time whatever GitHub's delay was. If another run
+  is already waiting for that slot, or the slot is further off, the run does
+  not wait. The wait happens in a job of its own that holds no lock, so a
+  health check or a rehearsal started by hand in the meantime runs at once.
 - `python ig_studio.py gate` decides whether a run posts. It looks for the
   earliest of today's two slots whose hour has come and which has no entry in
   `content/studio_schedule.json`. If there is one, and the date is not before
   `studio.api_start` in `config.json`, and something in the library is still
   waiting, the run posts. So the first run at or after a slot fills it, the
   later ones find it filled and stop, and a run that failed or never started is
-  made up by the next one. That same rule keeps the API off slots filled in
+  made up by the next one. A slot nobody filled on time is therefore filled
+  late, by the first run that starts after it, up to midnight New York time. That same rule keeps the API off slots filled in
   Business Suite.
 - A run posts one item: the first in `content/studio_instagram.json` whose id is
   not in the ledger, preferring an app that is not already posting that day and
@@ -253,6 +262,10 @@ cancelling a post scheduled in Business Suite". All nine were checked on
   the next item immediately** and takes that day's next free slot. Tick
   `check_only`, `dry_run`, `probe` or `health_only`, or fill in `rehearse`,
   unless that is what you want.
+- `as_scheduled` makes a run started by hand behave exactly like a scheduled
+  one: it waits for a slot up to five hours away and posts only into a slot
+  that is due and free. It is the box to use if something other than GitHub's
+  own clock is ever set up to start the workflow on time.
 
 ### What a library item can be
 
