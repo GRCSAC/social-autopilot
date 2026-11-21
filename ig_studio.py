@@ -361,7 +361,7 @@ def _already_waiting():
     try:
         out = subprocess.run(
             ["gh", "run", "list", "--repo", os.environ["GITHUB_REPOSITORY"],
-             "--workflow", "studio.yml", "--json", "databaseId,createdAt,status", "--limit", "30"],
+             "--workflow", "studio.yml", "--json", "databaseId,createdAt,status", "--limit", "100"],
             capture_output=True, text=True, timeout=60, check=True).stdout
         me = os.environ.get("GITHUB_RUN_ID", "")
         for r in json.loads(out):
