@@ -576,9 +576,9 @@
   "platform": "iPhone + Android",
   "status": "App Store + Google Play",
   "headline": "Free. No email, no password.",
-  "sub": "Sign in with Apple or Google and start rating. Your data stays yours.",
+  "sub": "Pick a User ID and start rating. Signing in with Apple or Google is optional.",
   "footer": "findr.grcsac.com",
-  "caption": "No email form, no password to invent.\n\nFindr is free on iPhone and Android. Sign in with Apple or Google, rate a few things, and your taste profile starts taking shape.\n\nfindr.grcsac.com (link in bio)\n\n#freeapp #iphone #android #recommendations #grcsac"
+  "caption": "No email form, no password to invent.\n\nFindr is free on iPhone and Android. Pick a User ID, rate a few things, and your taste profile starts taking shape. Signing in with Apple or Google is optional, and only keeps your ratings with you across devices.\n\nfindr.grcsac.com (link in bio)\n\n#freeapp #iphone #android #recommendations #grcsac"
  },
  {
   "id": "ig-studio-fitthis-3",
@@ -699,5 +699,125 @@
   "sub": "The rhythm belongs to PavLove alone, so you never mistake it for a message.",
   "footer": "pavlove.grcsac.com",
   "caption": "You will know it is not a text.\n\nPavLove reads the motion of your wrist fifty times a second, watching for the arc of a hand travelling to a mouth. When it catches one, you feel a short, long, short tap while you can still choose. No other alert feels like it.\n\nOn the App Store for iPhone and Apple Watch.\n\npavlove.grcsac.com (link in bio)\n\n#applewatch #haptics #habits #mindfuleating #applewatchapp #grcsac"
+ },
+ {
+  "id": "ig-studio-earnest-3",
+  "app": "earnest",
+  "name": "Earnest",
+  "platform": "iPhone",
+  "status": "Coming soon",
+  "footer": "earnest.grcsac.com",
+  "slides": [
+   {
+    "headline": "Built to be fair on purpose.",
+    "sub": "Three rules Earnest is being built around."
+   },
+   {
+    "headline": "Fair in both directions.",
+    "sub": "You only see each other if you are both inside each other's age range and want the same kind of thing."
+   },
+   {
+    "headline": "Badges, never scores.",
+    "sub": "No star ratings on people, no public reviews, no leaderboard. The only public marks are the good ones you earned."
+   },
+   {
+    "headline": "Serious only.",
+    "sub": "Long-term, open to it, or figuring it out. There is deliberately no casual setting."
+   }
+  ],
+  "caption": "Every filter runs both ways.\n\nOn Earnest you only see someone if you are inside their age range and they are inside yours, and you both want the same kind of thing. Nobody gets a star rating or a public review. The only marks anyone can see are good ones, earned over real dates.\n\nIn development and coming soon for iPhone. Details may change before launch.\n\nearnest.grcsac.com (link in bio)\n\n#datingapp #onlinedating #fairness #comingsoon #grcsac"
+ },
+ {
+  "id": "ig-studio-earnest-4",
+  "app": "earnest",
+  "name": "Earnest",
+  "platform": "iPhone",
+  "status": "Coming soon",
+  "headline": "You never see their answers. They never see yours.",
+  "sub": "A day after a confirmed date, both of you answer the same quiet check-in. Only kept words surface, as badges.",
+  "footer": "earnest.grcsac.com",
+  "caption": "Did they show up? Did they look like their photos? Were they good company?\n\nA day after a confirmed date, both people on Earnest answer those three questions. The check-in is double-blind: neither of you ever sees the other's answers. Only patterns surface, and only as positive badges.\n\nComing soon for iPhone. Details may change before launch.\n\nearnest.grcsac.com (link in bio)\n\n#datingapp #dating #accountability #comingsoon #grcsac"
+ },
+ {
+  "id": "ig-studio-zelzi-3",
+  "app": "zelzi",
+  "name": "Zelzi",
+  "platform": "iPhone",
+  "status": "In development",
+  "headline": "Two games. One card in both.",
+  "sub": "Went'z Siege and King'z Fall. Your personal card keeps the same art in each, with the numbers each game needs.",
+  "footer": "games.grcsac.com",
+  "caption": "Make a card once. Play it in two games.\n\nZelzi has two original games: Went'z Siege, won over rounds with a deck of 20 to 30 cards, and King'z Fall, played on a 3 by 5 board. Both come with 32 original starter cards, and one card of yours can carry a profile for each.\n\nIn development for iPhone, being tested on TestFlight.\n\ngames.grcsac.com (link in bio)\n\n#cardgame #indiegame #iphonegame #gamedesign #gamedev #grcsac"
+ },
+ {
+  "id": "ig-studio-zelzi-4",
+  "app": "zelzi",
+  "name": "Zelzi",
+  "platform": "iPhone",
+  "status": "In development",
+  "headline": "Your photos stay on your phone.",
+  "sub": "No account, no sign-in, no server. Zelzi makes no network connections of any kind.",
+  "footer": "games.grcsac.com",
+  "caption": "A photo of your pet makes a good card. It does not need to go anywhere.\n\nZelzi copies the photos you pick into its own storage on the phone and reads only those. Your cards, decks and match history stay there too, and deleting the app deletes them. It sends no usage data or crash reports to anyone.\n\nIn development for iPhone.\n\ngames.grcsac.com (link in bio)\n\n#cardgame #privacy #iphonegame #indiegame #grcsac"
+ },
+ {
+  "id": "ig-studio-sunkcost-3",
+  "app": "sunkcost",
+  "name": "Sunk Cost",
+  "platform": "iPhone + Android",
+  "status": "App Store + Google Play",
+  "headline": "Lock the phone. The meter keeps running.",
+  "sub": "Sunk Cost counts from the clock, not the screen. Pausing is the only thing that stops it.",
+  "footer": "sunkcost.grcsac.com",
+  "caption": "Switching apps will not save you.\n\nSunk Cost counts from the clock, not from the screen, so the total is right when you come back, even if the app was closed in the meantime. Pause for the coffee break, resume when it is over.\n\niPhone and Android. Nothing leaves your phone.\n\nsunkcost.grcsac.com (link in bio)\n\n#meetings #officehumor #worklife #corporatehumor #grcsac"
+ },
+ {
+  "id": "ig-studio-sunkcost-4",
+  "app": "sunkcost",
+  "name": "Sunk Cost",
+  "platform": "iPhone + Android",
+  "status": "App Store + Google Play",
+  "headline": "Salary is only part of the bill.",
+  "sub": "Switch on the full cost of a person and every salary is multiplied by 1.4. You can adjust it.",
+  "footer": "sunkcost.grcsac.com",
+  "caption": "A person costs more than their pay.\n\nOne switch in Sunk Cost's settings multiplies every salary by 1.4, a common rule of thumb for benefits, payroll tax and overhead, and you can change the number. The salaries that come with the app are rough illustrative averages. Tap a title to put in your own.\n\nThe totals are estimates, for entertainment.\n\nsunkcost.grcsac.com (link in bio)\n\n#meetings #couldhavebeenanemail #worklife #officelife #grcsac"
+ },
+ {
+  "id": "ig-studio-cysec-4",
+  "app": "cysec",
+  "name": "CySec",
+  "platform": "iPhone + Apple Watch",
+  "status": "On the App Store",
+  "headline": "Matching happens on your phone.",
+  "sub": "Turn environment sync off and your phone does all the matching. Our server then knows nothing about what you run.",
+  "footer": "cysec.grcsac.com",
+  "caption": "What you run is nobody else's business.\n\nCySec compares the public security reports with your list on the phone itself. Leave sync on for pushed alerts and our server learns product names only, never versions, components or notes. Turn it off and it learns nothing about what you run.\n\nNo account, no sign-in, no trackers.\n\ncysec.grcsac.com (link in bio)\n\n#cybersecurity #privacy #infosec #iphoneapp #grcsac"
+ },
+ {
+  "id": "ig-studio-findr-4",
+  "app": "findr",
+  "name": "Findr",
+  "platform": "iPhone + Android",
+  "status": "App Store + Google Play",
+  "footer": "findr.grcsac.com",
+  "slides": [
+   {
+    "headline": "Every swipe tells Findr something.",
+    "sub": "Each way you rate does a different job."
+   },
+   {
+    "headline": "Love it. Like it.",
+    "sub": "Tells Findr what to chase."
+   },
+   {
+    "headline": "Meh. Dislike.",
+    "sub": "Tells it what to steer around."
+   },
+   {
+    "headline": "Haven't tried.",
+    "sub": "Marks the things it is allowed to recommend to you."
+   }
+  ],
+  "caption": "There is no wrong answer, only a different instruction.\n\nLove and Like tell Findr what to chase. Meh and Dislike tell it what to steer around. Haven't tried marks what it may recommend, and Not interested removes a title for good. Then it looks for people whose taste overlaps yours.\n\nFree on iPhone and Android.\n\nfindr.grcsac.com (link in bio)\n\n#recommendations #whattowatch #movies #books #grcsac"
  }
 ]
