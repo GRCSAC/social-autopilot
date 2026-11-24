@@ -64,6 +64,13 @@
    "via": "api"
   },
   {
+   "id": "ig-studio-cinedrive-1",
+   "date": "2026-11-24",
+   "time": "11:00",
+   "scheduled_on": "2026-11-24",
+   "via": "api"
+  },
+  {
    "id": "ig-studio-nextfix-1",
    "date": "2026-11-25",
    "time": "11:00",
