@@ -57,6 +57,13 @@
    "scheduled_on": "2026-11-16"
   },
   {
+   "id": "ig-studio-pavlove-4",
+   "date": "2026-11-23",
+   "time": "19:00",
+   "scheduled_on": "2026-11-23",
+   "via": "api"
+  },
+  {
    "id": "ig-studio-nextfix-1",
    "date": "2026-11-25",
    "time": "11:00",
