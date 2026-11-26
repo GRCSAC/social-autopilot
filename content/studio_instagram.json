@@ -819,5 +819,103 @@
    }
   ],
   "caption": "There is no wrong answer, only a different instruction.\n\nLove and Like tell Findr what to chase. Meh and Dislike tell it what to steer around. Haven't tried marks what it may recommend, and Not interested removes a title for good. Then it looks for people whose taste overlaps yours.\n\nFree on iPhone and Android.\n\nfindr.grcsac.com (link in bio)\n\n#recommendations #whattowatch #movies #books #grcsac"
- }
+ },
+  {
+    "id": "ig-studio-iw-4",
+    "app": "infiniteworlds",
+    "name": "Infinite Worlds",
+    "platform": "iPhone + Android",
+    "status": "App Store + Google Play",
+    "footer": "infiniteworlds.grcsac.com",
+    "slides": [
+      {
+        "headline": "Three ways to get a narrator.",
+        "sub": "Pick the one that suits your phone. No account for any of them."
+      },
+      {
+        "headline": "A narrator on the phone.",
+        "sub": "Download one model once, then play with the phone in airplane mode. There are ten to choose from."
+      },
+      {
+        "headline": "Gemini Nano, where Android carries it.",
+        "sub": "On the Android phones that have it, there is nothing to download at all."
+      },
+      {
+        "headline": "Or Claude, with your own key.",
+        "sub": "The app asks once before any text leaves the phone, and shows what the last turn cost."
+      }
+    ],
+    "caption": "Who tells the story is up to you.\n\nInfinite Worlds is a solo tabletop adventure, and the narrator can be a model you download to the phone, Gemini Nano on the Android phones that carry it, or Claude with your own API key from Anthropic. With the first two, nothing you write leaves the device. With Claude, each turn goes to Anthropic under your own key, and the app asks first.\n\nOut now for iPhone and Android.\n\ninfiniteworlds.grcsac.com (link in bio)\n\n#aidungeonmaster #ttrpg #solorpg #interactivefiction #grcsac"
+  },
+  {
+    "id": "ig-studio-cinedrive-5",
+    "app": "cinedrive",
+    "name": "CineDrive",
+    "platform": "iPhone + CarPlay",
+    "status": "In development",
+    "headline": "Three films free. See what your car does.",
+    "sub": "Picture on the car screen depends on your car maker turning on CarPlay video. Find out what yours does before you pay anything.",
+    "footer": "cinedrive.grcsac.com",
+    "caption": "Whether the picture shows up depends on your car, so you should find that out before you pay.\n\nCineDrive is free for your first three films, with CarPlay, conversion, folders and posters all working. Video on the car screen needs the car to be parked and the car maker to have turned on CarPlay's video support, and none has publicly shipped it yet. Until one does, your film plays as audio in the car.\n\nAfter that, one purchase removes the limit. No subscription. In development, not yet on the App Store.\n\ncinedrive.grcsac.com (link in bio)\n\n#carplay #movies #iphoneapp #indevelopment #grcsac"
+  },
+  {
+    "id": "ig-studio-fitthis-5",
+    "app": "fitthis",
+    "name": "Fit This",
+    "platform": "iPhone + Apple Watch",
+    "status": "On the App Store",
+    "headline": "Miss a day. Keep your streak.",
+    "sub": "Fit This counts streaks in weeks. A consistent week earns a gold star, and a missed day never breaks anything.",
+    "footer": "fitthis.grcsac.com",
+    "caption": "No streak guilt.\n\nFit This counts streaks in weeks. A consistent week earns a gold star, a missed day never breaks anything, and the nudge only comes when a whole week slips by. The calendar encourages. It never punishes.\n\nA Weekly Stars widget keeps the streak in view on your Home Screen.\n\niPhone and Apple Watch. $9.99 once, no subscription.\n\nfitthis.grcsac.com (link in bio)\n\n#gymapp #consistency #workoutlog #strengthtraining #applewatch #grcsac"
+  },
+  {
+    "id": "ig-studio-inthezone-5",
+    "app": "inthezone",
+    "name": "In The Zone",
+    "platform": "iPhone + Apple Watch",
+    "status": "On the App Store",
+    "footer": "inthezone.grcsac.com",
+    "slides": [
+      {
+        "headline": "A paper plane flies your effort.",
+        "sub": "Turn on the Pacer for an indoor run. It is optional."
+      },
+      {
+        "headline": "Pitch is your position.",
+        "sub": "It shows where you sit in your target zone."
+      },
+      {
+        "headline": "Bank is your direction.",
+        "sub": "It shows which way your heart rate is heading."
+      },
+      {
+        "headline": "Level flight means you're holding it.",
+        "sub": "Sink or climb and you are drifting out."
+      }
+    ],
+    "caption": "Heart rate lags effort by twenty to sixty seconds.\n\nSo a bare number teaches you to chase it: push, overshoot, back off, undershoot. The Pacer in In The Zone shows the trend alongside the position, as a paper plane, so you can correct before you drift. Turn it on for an indoor run.\n\niPhone and Apple Watch. $1.99 once, no subscription.\n\ninthezone.grcsac.com (link in bio)\n\n#heartratetraining #zone2 #treadmill #runningapp #applewatch #grcsac"
+  },
+  {
+    "id": "ig-studio-nextfix-5",
+    "app": "nextfix",
+    "name": "NextFix",
+    "platform": "Windows, macOS, Linux",
+    "status": "Free + open source",
+    "headline": "Your code never leaves your network.",
+    "sub": "NextFix runs on your own machine or server. No account with GRCSAC, no telemetry, and no server of ours.",
+    "footer": "nextfix.grcsac.com",
+    "caption": "NextFix is a program you run yourself.\n\nThe only outbound traffic is the vulnerability lookups, the public fix commits it reads from GitHub, and whatever issue tracker or sign-on you choose to connect. None of those services receives your source code. The answers are cached on your machine, and a scan can run offline from the cache.\n\nFree and open source under Apache 2.0.\n\nnextfix.grcsac.com (link in bio)\n\n#appsec #devsecops #privacy #opensource #selfhosted #grcsac"
+  },
+  {
+    "id": "ig-studio-pavlove-6",
+    "app": "pavlove",
+    "name": "PavLove",
+    "platform": "iPhone + Apple Watch",
+    "status": "On the App Store",
+    "headline": "Tell it when it gets one wrong.",
+    "sub": "Two buttons on the watch let you correct it. That is how it learns your habits rather than an average stranger's.",
+    "footer": "pavlove.grcsac.com",
+    "caption": "Sometimes it buzzes when you are not eating.\n\nTurn on Training mode in the watch's Settings and mark the mistake with \"Wasn't eating\". PavLove learns from those corrections, so it is trained on how you move, not on an average. You can also lower Sensitivity. Wear the watch on the hand you eat with.\n\nOn the App Store for iPhone and Apple Watch.\n\npavlove.grcsac.com (link in bio)\n\n#applewatch #habits #mindfuleating #snacking #applewatchapp #grcsac"
+  }
 ]
